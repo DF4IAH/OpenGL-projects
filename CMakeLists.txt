@@ -12,6 +12,10 @@ find_package(GLUT REQUIRED)
 include_directories(${GLUT_INCLUDE_DIR})
 
 
+find_package(PostgreSQL REQUIRED)
+include_directories(${PostgreSQL_INCLUDE_DIR})
+
+
 if(__OPENNN_MPI__)
    find_package(MPI)
    if(MPI_FOUND)
