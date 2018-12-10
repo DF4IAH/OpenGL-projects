@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-project(GL_examples)
+project(OpenGL-projects)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CPACK_GENERATOR "TGZ")
@@ -11,6 +11,7 @@ include_directories(${OPENGL_INCLUDE_DIR})
 find_package(GLUT REQUIRED)
 include_directories(${GLUT_INCLUDE_DIR})
 
+include_directories(/opt/local/include)
 
 if(__OPENNN_MPI__)
    find_package(MPI)
@@ -39,6 +40,5 @@ add_compile_options("-O3")
 
 
 add_subdirectory(src)
-include_directories(src /opt/local/include)
 
 include(CPack)

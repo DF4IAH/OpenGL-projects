@@ -11,6 +11,12 @@
 #include <GL/glut.h>
 
 
+typedef enum {
+	MENU_NONE			= 0,
+	MENU_QUIT,
+} GL_MENU_ITEMS;
+
+
 GLfloat 	light_diffuse[]		= {1.0, 0.0, 0.0, 1.0};  /* Red diffuse light. */
 
 GLfloat		light_position[]	= {1.0, 1.0, 1.0, 0.0};  /* Infinite light location. */
@@ -91,12 +97,37 @@ void init(void)
   glRotatef(-20, 0.0, 0.0, 1.0);
 }
 
+void keyboard(unsigned char ch, int x, int y)
+{
+  switch (ch) {
+  case 27:             /* ESC */
+  case 'q':
+    exit(0);
+    break;
+  }
+}
+
+void menu(int item)
+{
+  switch (item) {
+  case MENU_QUIT:
+    exit(0);
+    break;
+  }
+}
+
+
+
 int main(int argc, char **argv)
 {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
   glutCreateWindow("red 3D lighted cube");
+  glutKeyboardFunc(keyboard);
   glutDisplayFunc(display);
+  glutCreateMenu(menu);
+  glutAddMenuEntry("Quit", MENU_QUIT);
+  glutAttachMenu(GLUT_RIGHT_BUTTON);
 
   init();
   glutMainLoop();
