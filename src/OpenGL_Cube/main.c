@@ -36,6 +36,7 @@ GLfloat		v[8][3];		/* Will be filled in with X,Y,Z vertexes. */
 
 void drawBox(void)
 {
+  const GLfloat phi = 1.0;
   int i;
 
   for (i = 0; i < 6; i++) {
@@ -47,6 +48,8 @@ void drawBox(void)
     glVertex3fv(&v[faces[i][3]][0]);
     glEnd();
   }
+
+  glRotatef(phi, 0.1, 0.2, 1.0);
 }
 
 void
@@ -104,6 +107,9 @@ void keyboard(unsigned char ch, int x, int y)
   case 'q':
     exit(0);
     break;
+
+  default:
+    glutPostRedisplay();
   }
 }
 
@@ -115,7 +121,6 @@ void menu(int item)
     break;
   }
 }
-
 
 
 int main(int argc, char **argv)
