@@ -4,12 +4,19 @@ project(OpenGL-projects)
 set(CMAKE_CXX_STANDARD 11)
 set(CPACK_GENERATOR "TGZ")
 
+if(WIN32)
+   message(STATUS "Compilation for a Windows system.")
+   set(OPENGL_ROOT_DIR "C:/Program Files/Common Files/MinGW/freeglut")
+   include_directories("${OPENGL_ROOT_DIR}/include")
+   link_directories("${OPENGL_ROOT_DIR}/lib")
+elseif(UNIX)
+   message(STATUS "Compilation for an UNIX like system.")
+   find_package(OpenGL REQUIRED)
+   include_directories(${OPENGL_INCLUDE_DIR})
 
-find_package(OpenGL REQUIRED)
-include_directories(${OPENGL_INCLUDE_DIR})
-
-find_package(GLUT REQUIRED)
-include_directories(${GLUT_INCLUDE_DIR})
+   find_package(GLUT REQUIRED)
+   include_directories(${GLUT_INCLUDE_DIR})
+endif()
 
 
 find_package(PostgreSQL REQUIRED)
