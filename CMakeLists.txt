@@ -44,6 +44,7 @@ endif()
 
 
 add_compile_options("-O3")
+add_compile_options("-g2")
 
 # Uncomment next line to compile without using C++11
 #add_definitions(-D__Cpp11__)

@@ -32,21 +32,26 @@ int pq::getColCnt(void)
 
 bool pq::connect(const string dbName)
 {
-  string dbCon("dbname = ");
+  string dbCon;
+  dbCon.append("host=localhost port=5432 ");
+  dbCon.append("dbname=");
   dbCon.append(dbName);
+  dbCon.append(" user=wwwrun password=wwwrun");
 
   pqCon = PQconnectdb(dbCon.c_str());
   if (PQstatus(pqCon) == CONNECTION_OK) {
+#if 0
     /* Set always-secure search path, so malicious users can't take control. */
     pqRes = PQexec(pqCon, "SELECT pg_catalog.set_config('search_path', '', false)");
     if (PQresultStatus(pqRes) != PGRES_TUPLES_OK) {
       cerr << "SET failed: " << PQerrorMessage(pqCon) << endl;
     }
     PQclear(pqRes);
+#endif
     return true;
 
   } else {
-    cerr << "PQ: can not establish connection to the database" << dbName << endl;
+    cerr << "PQ: can not establish connection to the database '" << dbName << "'" << endl;
     return false;
   }
 }
@@ -82,29 +87,37 @@ vvs_t pq::execSync(const string params)
 {
   vvs_t vvs;
 
-  if (!pqCon) {
-    cerr << "pq execSync() error: no valid connection" << endl;
+  switch (PQstatus(pqCon))
+  {
+  case CONNECTION_OK:
+    break;
+
+  default:
+    cerr << "pq execSync() connection error: PQstatus " << PQstatus(pqCon) << endl;
     return vvs;
   }
 
   clrRes();
   if (!PQsendQuery(pqCon, params.c_str())) {
+    cerr << "pq execSync() query error: " << PQerrorMessage(pqCon) << endl;
     return vvs;
   }
   PQsetSingleRowMode(pqCon);
 
-  int rowIdx = 0;
   while (pqRes = PQgetResult(pqCon)) {
     ExecStatusType est = PQresultStatus(pqRes);
 
     switch (est)
     {
     case PGRES_TUPLES_OK:
+      break;
+
     case PGRES_COPY_OUT:
     case PGRES_SINGLE_TUPLE:
       {
+        int rowCnt = PQntuples(pqRes);
         pqColCnt = PQnfields(pqRes);
-        cout << "execSync(): pulling row " << rowIdx << " with " << pqColCnt << " columns." << endl;
+        //cout << "execSync(): pulling row " << pqRowCnt << " with " << pqColCnt << " columns." << endl;
 
         vector<string> vs;
 
@@ -118,9 +131,8 @@ vvs_t pq::execSync(const string params)
       break;
 
     default:
-      clrRes();
+      cout << "execSync(): " << PQresStatus(est) << endl;
     }
-
   }
   return vvs;
 }
