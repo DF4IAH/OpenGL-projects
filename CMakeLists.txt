@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.10)
 project(OpenGL-projects)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -37,6 +37,15 @@ elseif(UNIX)
 
    find_package(GLUT REQUIRED)
    include_directories(${GLUT_INCLUDE_DIR})
+
+   find_package(GLEW REQUIRED)
+   include_directories(${GLEW_INCLUDE_DIR})
+
+   #find_package(GLFW REQUIRED)
+   set(GLFW_INCLUDE_DIR "/usr/include")
+   set(GLFW_LIBRARIES "/usr/lib/x86_64-linux-gnu/libglfw.so")
+   include_directories(${GLFW_INCLUDE_DIR})
+
 endif()
 
 
