@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
 
   if (db.connect("gis")) {
     cout << "main: DB gis ok." << endl;
-    vvs_t res = db.execSync("SELECT *  FROM TOPO  WHERE id = 1  AND  row between 5000 and 5000  LIMIT 100;");
+    vvs_t res = db.execSync("SELECT id  FROM TOPO  WHERE id = 1  AND  row between 5000 and 5000  LIMIT 100;");
     int rowCnt = db.getRowCnt();
     int colCnt = db.getColCnt();
 

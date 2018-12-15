@@ -14,10 +14,10 @@
 using namespace glm;
 
 
-
 /* old fashioned */
 //#include <GL/glut.h>
 
+#include "../common/shader.hpp"
 
 #include "ogl.h"
 
@@ -82,13 +82,17 @@ ogl::ogl(void)
   // Give our vertices to OpenGL.
   glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 
+  // Create and compile our GLSL program from the shaders
+  GLuint programID = LoadShaders("SimpleVertexShader.vertexshader", "SimpleFragmentShader.fragmentshader");
+  cout << "programID = " << programID << endl;
 
   // Ensure we can capture the escape key being pressed below
   glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
   do {
     // Clear the screen. It's not mentioned before Tutorial 02, but it can cause flickering, so it's there nonetheless.
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     {
       // 1st attribute buffer : vertices
@@ -102,8 +106,11 @@ ogl::ogl(void)
          GL_FLOAT,           // type
          GL_FALSE,           // normalized?
          0,                  // stride
-         (void*)nullptr      // array buffer offset
+         nullptr             // array buffer offset
       );
+
+      // Use our shader
+      glUseProgram(programID);
 
       // Draw the triangle !
       glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
