@@ -12,6 +12,9 @@ int main(int argc, char* argv[])
   ogl ogl;
   pq  db;
 
+  (void)argc;
+  (void)argv;
+
   if (db.connect("gis")) {
     cout << "main: DB gis ok." << endl;
     vvs_t res = db.execSync("SELECT *  FROM TOPO  WHERE id = 1  AND  row between 5000 and 5000  LIMIT 100;");
@@ -24,7 +27,7 @@ int main(int argc, char* argv[])
     for (int rowIdx = 0; rowIdx < rowCnt; rowIdx++) {
       cout << endl << "Row " << rowIdx << ":\t";
       for (int colIdx = 0; colIdx < colCnt; colIdx++) {
-        cout << res.at(rowIdx).at(colIdx) << "\t";
+        cout << res.at(static_cast<uint32_t>(rowIdx)).at(static_cast<uint32_t>(colIdx)) << "\t";
       }
     }
     cout << endl << endl;

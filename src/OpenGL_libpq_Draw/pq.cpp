@@ -67,7 +67,7 @@ void pq::clrRes(void)
 {
   if (pqRes) {
     PQclear(pqRes);
-    pqRes = NULL;
+    pqRes = 0;
 
     pqRowCnt = 0;
     pqColCnt = 0;
@@ -78,7 +78,7 @@ void pq::clrCon(void)
 {
   if (pqCon) {
     PQfinish(pqCon);
-    pqCon = NULL;
+    pqCon = 0;
   }
 }
 
@@ -104,7 +104,7 @@ vvs_t pq::execSync(const string params)
   }
   PQsetSingleRowMode(pqCon);
 
-  while (pqRes = PQgetResult(pqCon)) {
+  while ((pqRes = PQgetResult(pqCon))) {
     ExecStatusType est = PQresultStatus(pqRes);
 
     switch (est)
@@ -115,7 +115,7 @@ vvs_t pq::execSync(const string params)
     case PGRES_COPY_OUT:
     case PGRES_SINGLE_TUPLE:
       {
-        int rowCnt = PQntuples(pqRes);
+        //int rowCnt = PQntuples(pqRes);
         pqColCnt = PQnfields(pqRes);
         //cout << "execSync(): pulling row " << pqRowCnt << " with " << pqColCnt << " columns." << endl;
 

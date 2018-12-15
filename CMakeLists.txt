@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.13)
 project(OpenGL-projects)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -9,18 +9,35 @@ if(WIN32)
    set(OPENGL_ROOT_DIR "C:/Program Files/Common Files/MinGW/freeglut")
    include_directories("${OPENGL_ROOT_DIR}/include")
    link_directories("${OPENGL_ROOT_DIR}/lib")
+
+elseif(APPLE)
+   message(STATUS "Compilation for a MAC using port utilities.")
+  #find_package(PostgreSQL REQUIRED)
+   set(PostgreSQL_INCLUDE_DIR "/opt/local/include/postgresql10")
+   file(GLOB_RECURSE PostgreSQL_LIBRARIES "/opt/local/lib/postgresql10/*.dylib")
+   include_directories(${PostgreSQL_INCLUDE_DIR})
+
+  #find_package(OpenGL REQUIRED)
+   set(OPENGL_INCLUDE_DIR "/opt/local/include")
+   set(OPENGL_LIBRARIES   "/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib")
+   set(GLUT_LIBRARIES     "/opt/local/lib/libglut.dylib")
+   set(GLEW_LIBRARIES     "/opt/local/lib/libGLEW.dylib")
+   set(GLFW_LIBRARIES     "/opt/local/lib/libglfw.dylib")
+   message(STATUS "Found OPENGL_INCLUDE_DIR=${OPENGL_INCLUDE_DIR}")
+   include_directories(${OPENGL_INCLUDE_DIR})
+
 elseif(UNIX)
    message(STATUS "Compilation for an UNIX like system.")
+
+   find_package(PostgreSQL REQUIRED)
+   include_directories(${PostgreSQL_INCLUDE_DIR})
+
    find_package(OpenGL REQUIRED)
    include_directories(${OPENGL_INCLUDE_DIR})
 
    find_package(GLUT REQUIRED)
    include_directories(${GLUT_INCLUDE_DIR})
 endif()
-
-
-find_package(PostgreSQL REQUIRED)
-include_directories(${PostgreSQL_INCLUDE_DIR})
 
 
 if(__OPENNN_MPI__)
