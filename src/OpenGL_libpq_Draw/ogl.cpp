@@ -101,16 +101,16 @@ ogl::ogl(void)
   GLint MatrixID = glGetUniformLocation(programID, "MVP");
 
   #if 1
-  // Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
+  // Projection matrix : 35° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
   glm::mat4 Projection = glm::perspective(
-    glm::radians(45.0f),
+    glm::radians(35.0f),
     static_cast<float>(width) / static_cast<float>(height),
     0.1f, 100.0f);
   #else
   // Or, for an ortho camera :
   glm::mat4 Projection = glm::ortho(
-        -10.0f, 10.0f,
-        -10.0f, 10.0f,
+        -3.0f, 3.0f,
+        -3.0f, 3.0f,
          0.0f, 100.0f); // In world coordinates
   #endif
 
@@ -128,9 +128,13 @@ ogl::ogl(void)
 
 
   // Load the texture using any two methods
-  unsigned char* textureData = nullptr;
-  //GLuint Texture = loadBMP_custom("uvtemplate.bmp", textureData);
+#if 1
+  GLuint Texture = loadBMP_custom("uvtemplate.bmp");
+# define REVERT 1.0f-
+#else
   GLuint Texture = loadDDS("uvtemplate.DDS");
+# define REVERT
+#endif
 
   // Get a handle for our "myTextureSampler" uniform
   GLint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
@@ -186,42 +190,42 @@ ogl::ogl(void)
 
   // Two UV coordinates for each vertex. They were created with Blender.
   static const GLfloat g_uv_buffer_data[] = {
-      0.000059f, 1.0f-0.000004f,
-      0.000103f, 1.0f-0.336048f,
-      0.335973f, 1.0f-0.335903f,
-      1.000023f, 1.0f-0.000013f,
-      0.667979f, 1.0f-0.335851f,
-      0.999958f, 1.0f-0.336064f,
-      0.667979f, 1.0f-0.335851f,
-      0.336024f, 1.0f-0.671877f,
-      0.667969f, 1.0f-0.671889f,
-      1.000023f, 1.0f-0.000013f,
-      0.668104f, 1.0f-0.000013f,
-      0.667979f, 1.0f-0.335851f,
-      0.000059f, 1.0f-0.000004f,
-      0.335973f, 1.0f-0.335903f,
-      0.336098f, 1.0f-0.000071f,
-      0.667979f, 1.0f-0.335851f,
-      0.335973f, 1.0f-0.335903f,
-      0.336024f, 1.0f-0.671877f,
-      1.000004f, 1.0f-0.671847f,
-      0.999958f, 1.0f-0.336064f,
-      0.667979f, 1.0f-0.335851f,
-      0.668104f, 1.0f-0.000013f,
-      0.335973f, 1.0f-0.335903f,
-      0.667979f, 1.0f-0.335851f,
-      0.335973f, 1.0f-0.335903f,
-      0.668104f, 1.0f-0.000013f,
-      0.336098f, 1.0f-0.000071f,
-      0.000103f, 1.0f-0.336048f,
-      0.000004f, 1.0f-0.671870f,
-      0.336024f, 1.0f-0.671877f,
-      0.000103f, 1.0f-0.336048f,
-      0.336024f, 1.0f-0.671877f,
-      0.335973f, 1.0f-0.335903f,
-      0.667969f, 1.0f-0.671889f,
-      1.000004f, 1.0f-0.671847f,
-      0.667979f, 1.0f-0.335851f
+    0.0001f, REVERT 0.0001f,
+    0.0001f, REVERT 0.3333f,
+    0.3334f, REVERT 0.3333f,
+    0.9999f, REVERT 0.0001f,
+    0.6667f, REVERT 0.3333f,
+    0.9999f, REVERT 0.3333f,
+    0.6667f, REVERT 0.3333f,
+    0.3333f, REVERT 0.6667f,
+    0.6667f, REVERT 0.6667f,
+    0.9999f, REVERT 0.0001f,
+    0.6667f, REVERT 0.0001f,
+    0.6667f, REVERT 0.3333f,
+    0.0001f, REVERT 0.0001f,
+    0.3333f, REVERT 0.3333f,
+    0.3333f, REVERT 0.0001f,
+    0.6667f, REVERT 0.3333f,
+    0.3333f, REVERT 0.3333f,
+    0.3333f, REVERT 0.6667f,
+    0.9999f, REVERT 0.6667f,
+    0.9999f, REVERT 0.3333f,
+    0.6667f, REVERT 0.3333f,
+    0.6667f, REVERT 0.0001f,
+    0.3333f, REVERT 0.3333f,
+    0.6667f, REVERT 0.3333f,
+    0.3333f, REVERT 0.3333f,
+    0.6667f, REVERT 0.0001f,
+    0.3333f, REVERT 0.0001f,
+    0.0001f, REVERT 0.3333f,
+    0.0001f, REVERT 0.6667f,
+    0.3333f, REVERT 0.6667f,
+    0.0001f, REVERT 0.3333f,
+    0.3333f, REVERT 0.6667f,
+    0.3333f, REVERT 0.3333f,
+    0.6667f, REVERT 0.6667f,
+    0.9999f, REVERT 0.6667f,
+    0.6667f, REVERT 0.3333f
   };
 
 
@@ -303,7 +307,6 @@ ogl::ogl(void)
   glDeleteBuffers(1, &uvbuffer);
   glDeleteProgram(programID);
   glDeleteTextures(1, &Texture);
-  free(textureData);
   glDeleteVertexArrays(1, &VertexArrayID);
 
   // Close OpenGL window and terminate GLFW
@@ -314,75 +317,4 @@ ogl::~ogl()
 {
 
   cout << "OpenGL DESC" << endl;
-}
-
-
-GLuint ogl::loadBMP_custom(const char* imagepath, unsigned char* data)
-{
-  // Data read from the header of the BMP file
-  unsigned char header[54]; // Each BMP file begins by a 54-bytes header
-  int dataPos;     // Position in the file where the actual data begins
-  int width, height;
-  unsigned int imageSize;   // = width*height*3
-  // Actual RGB data
-  //unsigned char* data;
-
-  // Open the file
-  FILE* file = fopen(imagepath,"rb");
-  if (!file) {
-    printf("Image could not be opened\n");
-    return 0;
-  }
-
-  if (fread(header, 1, 54, file) !=54) {
-    // If not 54 bytes read : problem
-    printf("Not a correct BMP file\n");
-    return false;
-  }
-
-  if (header[0]!='B' || header[1]!='M') {
-    printf("Not a correct BMP file\n");
-    return 0;
-  }
-
-  // Read ints from the byte array
-  dataPos    = *(reinterpret_cast<int*>(&(header[0x0A])));
-  imageSize  = *(reinterpret_cast<unsigned int*>(&(header[0x22])));
-  width      = *(reinterpret_cast<int*>(&(header[0x12])));
-  height     = *(reinterpret_cast<int*>(&(header[0x16])));
-
-  // Some BMP files are misformatted, guess missing information
-  if (!imageSize)
-    imageSize = static_cast<unsigned int>(width * height * 3); // 3 : one byte for each Red, Green and Blue component
-
-  if (!dataPos)
-    dataPos = 54; // The BMP header is done that way
-
-  // Create a buffer
-  data = new unsigned char[imageSize];
-
-  // Read the actual data from the file into the buffer
-  if (imageSize != fread(data, 1, imageSize, file)) {
-    printf("Not a correct BMP file\n");
-    return 0;
-  }
-
-  //Everything is in memory now, the file can be closed
-  fclose(file);
-
-
-  // Create one OpenGL texture
-  GLuint textureID;
-  glGenTextures(1, &textureID);
-
-  // "Bind" the newly created texture : all future texture functions will modify this texture
-  glBindTexture(GL_TEXTURE_2D, textureID);
-
-  // Give the image to OpenGL
-  glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-  return textureID;
 }

@@ -11,7 +11,6 @@ public:
 
 
 private:
-  GLuint loadBMP_custom(const char* imagepath, unsigned char* data);
 
 };
 
