@@ -85,7 +85,14 @@ ogl::ogl(void)
   // Create and compile our GLSL program from the shaders
   GLuint programID = LoadShaders("TransformVertexShader.vertexshader", "ColorFragmentShader.fragmentshader");
   cout << "programID = " << programID << endl;
+  if (!programID) {
+    glDeleteVertexArrays(1, &VertexArrayID);
 
+    // Close OpenGL window and terminate GLFW
+    glfwTerminate();
+
+    return;
+  }
 
   // Get a handle for our "MVP" uniform
   GLint MatrixID = glGetUniformLocation(programID, "MVP");

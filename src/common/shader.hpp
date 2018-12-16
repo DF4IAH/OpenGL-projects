@@ -20,8 +20,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
     VertexShaderCode = sstr.str();
     VertexShaderStream.close();
   } else {
-    printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", vertex_file_path);
-    getchar();
+    printf("Impossible to open %s. Are you in the right directory ?\n", vertex_file_path);
     return 0;
   }
 
@@ -33,6 +32,9 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
     sstr << FragmentShaderStream.rdbuf();
     FragmentShaderCode = sstr.str();
     FragmentShaderStream.close();
+  } else {
+    printf("Impossible to open %s. Are you in the right directory ?\n", fragment_file_path);
+    return 0;
   }
 
   GLint Result = GL_FALSE;
