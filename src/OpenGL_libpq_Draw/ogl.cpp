@@ -127,8 +127,8 @@ ogl::ogl(void)
 
   // Load the texture using any two methods
   unsigned char* textureData = nullptr;
-  //GLuint Texture = loadBMP_custom("uvtemplate.bmp", textureData);
-  GLuint Texture = loadDDS("uvtemplate.DDS");
+  GLuint Texture = loadBMP_custom("uvtemplate.bmp", textureData);
+  //GLuint Texture = loadDDS("uvtemplate.DDS");
 
   // Get a handle for our "myTextureSampler" uniform
   GLint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
