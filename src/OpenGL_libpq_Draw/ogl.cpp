@@ -9,7 +9,7 @@
 
 // Include GLFW
 #include <GLFW/glfw3.h>
-extern GLFWwindow* window;
+GLFWwindow* window;
 
 // Include GLM
 #define GLM_ENABLE_EXPERIMENTAL
@@ -21,6 +21,7 @@ using namespace glm;
 #include "../common/shader.hpp"
 #include "../common/shader_own.hpp"
 #include "../common/texture.hpp"
+#include "../common/controls.hpp"
 
 #include "ogl.h"
 
@@ -50,8 +51,7 @@ ogl::ogl(void)
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
 
   // Open a window and create its OpenGL context
-  GLFWwindow* window; // (In the accompanying source code, this variable is global for simplicity)
-  window = glfwCreateWindow(width, height, "Tutorial 05", nullptr, nullptr);
+  window = glfwCreateWindow(width, height, "Tutorial 06", nullptr, nullptr);
   if (window == nullptr) {
     fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
     glfwTerminate();
@@ -100,6 +100,7 @@ ogl::ogl(void)
   // Get a handle for our "MVP" uniform
   GLint MatrixID = glGetUniformLocation(programID, "MVP");
 
+#if 0
   #if 1
   // Projection matrix : 35° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
   glm::mat4 Projection = glm::perspective(
@@ -125,6 +126,7 @@ ogl::ogl(void)
   glm::mat4 Model = glm::mat4(1.0f);
   // Our ModelViewProjection : multiplication of our 3 matrices
   glm::mat4 MVP = Projection * View * Model; // Remember, matrix multiplication is the other way around
+#endif
 
 
   // Load the texture using any two methods
@@ -145,25 +147,25 @@ ogl::ogl(void)
     // Our vertices. Three consecutive floats give a 3D vertex; Three consecutive vertices give a triangle.
     // A cube has 6 faces with 2 triangles each, so this makes 6*2=12 triangles, and 12*3 vertices
     -1.0f,-1.0f,-1.0f, // triangle 1 : begin
-     -1.0f,-1.0f, 1.0f,
-     -1.0f, 1.0f, 1.0f, // triangle 1 : end
+    -1.0f,-1.0f, 1.0f,
+    -1.0f, 1.0f, 1.0f, // triangle 1 : end
      1.0f, 1.0f,-1.0f, // triangle 2 : begin
-     -1.0f,-1.0f,-1.0f,
-     -1.0f, 1.0f,-1.0f, // triangle 2 : end
+    -1.0f,-1.0f,-1.0f,
+    -1.0f, 1.0f,-1.0f, // triangle 2 : end
      1.0f,-1.0f, 1.0f,
-     -1.0f,-1.0f,-1.0f,
+    -1.0f,-1.0f,-1.0f,
      1.0f,-1.0f,-1.0f,
      1.0f, 1.0f,-1.0f,
      1.0f,-1.0f,-1.0f,
-     -1.0f,-1.0f,-1.0f,
-     -1.0f,-1.0f,-1.0f,
-     -1.0f, 1.0f, 1.0f,
-     -1.0f, 1.0f,-1.0f,
+    -1.0f,-1.0f,-1.0f,
+    -1.0f,-1.0f,-1.0f,
+    -1.0f, 1.0f, 1.0f,
+    -1.0f, 1.0f,-1.0f,
      1.0f,-1.0f, 1.0f,
-     -1.0f,-1.0f, 1.0f,
-     -1.0f,-1.0f,-1.0f,
-     -1.0f, 1.0f, 1.0f,
-     -1.0f,-1.0f, 1.0f,
+    -1.0f,-1.0f, 1.0f,
+    -1.0f,-1.0f,-1.0f,
+    -1.0f, 1.0f, 1.0f,
+    -1.0f,-1.0f, 1.0f,
      1.0f,-1.0f, 1.0f,
      1.0f, 1.0f, 1.0f,
      1.0f,-1.0f,-1.0f,
@@ -173,18 +175,18 @@ ogl::ogl(void)
      1.0f,-1.0f, 1.0f,
      1.0f, 1.0f, 1.0f,
      1.0f, 1.0f,-1.0f,
-     -1.0f, 1.0f,-1.0f,
+    -1.0f, 1.0f,-1.0f,
      1.0f, 1.0f, 1.0f,
-     -1.0f, 1.0f,-1.0f,
-     -1.0f, 1.0f, 1.0f,
+    -1.0f, 1.0f,-1.0f,
+    -1.0f, 1.0f, 1.0f,
      1.0f, 1.0f, 1.0f,
-     -1.0f, 1.0f, 1.0f,
+    -1.0f, 1.0f, 1.0f,
      1.0f,-1.0f, 1.0f
   #else
     // An array of 3 vectors which represents 3 vertices
-    -1.0f, -1.0f, 0.0f,
-     1.0f, -1.0f, 0.0f,
-     0.0f,  1.0f, 0.0f
+    -1.0f,-1.0f, 0.0f,
+     1.0f,-1.0f, 0.0f,
+     0.0f, 1.0f, 0.0f
   #endif
   };
 
@@ -249,6 +251,13 @@ ogl::ogl(void)
     // Use our shader
     glUseProgram(programID);
 
+    // Compute the MVP matrix from keyboard and mouse input
+    computeMatricesFromInputs();
+    glm::mat4 ProjectionMatrix = getProjectionMatrix();
+    glm::mat4 ViewMatrix = getViewMatrix();
+    glm::mat4 ModelMatrix = glm::mat4(1.0);
+    glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+
     // Send our transformation to the currently bound shader,
     // in the "MVP" uniform
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -301,6 +310,7 @@ ogl::ogl(void)
     glfwSwapBuffers(window);
     glfwPollEvents();
   } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);  // Check if the ESC key was pressed or the window was closed
+
 
   // Cleanup VBO and shader
   glDeleteBuffers(1, &vertexbuffer);
