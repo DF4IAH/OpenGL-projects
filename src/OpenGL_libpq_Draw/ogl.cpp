@@ -19,6 +19,8 @@ extern GLFWwindow* window;
 using namespace glm;
 
 #include "../common/shader.hpp"
+#include "../common/shader_own.hpp"
+#include "../common/texture.hpp"
 
 #include "ogl.h"
 
@@ -127,8 +129,8 @@ ogl::ogl(void)
 
   // Load the texture using any two methods
   unsigned char* textureData = nullptr;
-  GLuint Texture = loadBMP_custom("uvtemplate.bmp", textureData);
-  //GLuint Texture = loadDDS("uvtemplate.DDS");
+  //GLuint Texture = loadBMP_custom("uvtemplate.bmp", textureData);
+  GLuint Texture = loadDDS("uvtemplate.DDS");
 
   // Get a handle for our "myTextureSampler" uniform
   GLint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
