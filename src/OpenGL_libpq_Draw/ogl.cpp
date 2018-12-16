@@ -51,7 +51,7 @@ ogl::ogl(void)
 
   // Open a window and create its OpenGL context
   GLFWwindow* window; // (In the accompanying source code, this variable is global for simplicity)
-  window = glfwCreateWindow(width, height, "Tutorial 03", nullptr, nullptr);
+  window = glfwCreateWindow(width, height, "Tutorial 04", nullptr, nullptr);
   if (window == nullptr) {
     fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
     glfwTerminate();
@@ -70,11 +70,52 @@ ogl::ogl(void)
   glGenVertexArrays(1, &VertexArrayID);
   glBindVertexArray(VertexArrayID);
 
-  // An array of 3 vectors which represents 3 vertices
   static const GLfloat g_vertex_buffer_data[] = {
-     -1.0f, -1.0f, 0.0f,
+  #if 1
+    // Our vertices. Three consecutive floats give a 3D vertex; Three consecutive vertices give a triangle.
+    // A cube has 6 faces with 2 triangles each, so this makes 6*2=12 triangles, and 12*3 vertices
+    -1.0f,-1.0f,-1.0f, // triangle 1 : begin
+     -1.0f,-1.0f, 1.0f,
+     -1.0f, 1.0f, 1.0f, // triangle 1 : end
+     1.0f, 1.0f,-1.0f, // triangle 2 : begin
+     -1.0f,-1.0f,-1.0f,
+     -1.0f, 1.0f,-1.0f, // triangle 2 : end
+     1.0f,-1.0f, 1.0f,
+     -1.0f,-1.0f,-1.0f,
+     1.0f,-1.0f,-1.0f,
+     1.0f, 1.0f,-1.0f,
+     1.0f,-1.0f,-1.0f,
+     -1.0f,-1.0f,-1.0f,
+     -1.0f,-1.0f,-1.0f,
+     -1.0f, 1.0f, 1.0f,
+     -1.0f, 1.0f,-1.0f,
+     1.0f,-1.0f, 1.0f,
+     -1.0f,-1.0f, 1.0f,
+     -1.0f,-1.0f,-1.0f,
+     -1.0f, 1.0f, 1.0f,
+     -1.0f,-1.0f, 1.0f,
+     1.0f,-1.0f, 1.0f,
+     1.0f, 1.0f, 1.0f,
+     1.0f,-1.0f,-1.0f,
+     1.0f, 1.0f,-1.0f,
+     1.0f,-1.0f,-1.0f,
+     1.0f, 1.0f, 1.0f,
+     1.0f,-1.0f, 1.0f,
+     1.0f, 1.0f, 1.0f,
+     1.0f, 1.0f,-1.0f,
+     -1.0f, 1.0f,-1.0f,
+     1.0f, 1.0f, 1.0f,
+     -1.0f, 1.0f,-1.0f,
+     -1.0f, 1.0f, 1.0f,
+     1.0f, 1.0f, 1.0f,
+     -1.0f, 1.0f, 1.0f,
+     1.0f,-1.0f, 1.0f
+  #else
+    // An array of 3 vectors which represents 3 vertices
+    -1.0f, -1.0f, 0.0f,
      1.0f, -1.0f, 0.0f,
-     0.0f,  1.0f, 0.0f,
+     0.0f,  1.0f, 0.0f
+  #endif
   };
 
   // This will identify our vertex buffer
@@ -191,7 +232,11 @@ ogl::ogl(void)
       glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
 
       // Draw the triangle !
+      #if 1
+      glDrawArrays(GL_TRIANGLES, 0, 12*3); // 12*3 indices starting at 0 -> 12 triangles -> 6 squares
+      #else
       glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
+      #endif
 
       glDisableVertexAttribArray(0);
     }
