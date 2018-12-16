@@ -69,7 +69,7 @@ if(__OPENNN_OMP__)
 endif()
 
 
-add_compile_options("-O3")
+add_compile_options("-O0")
 add_compile_options("-g2")
 
 # Uncomment next line to compile without using C++11

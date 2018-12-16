@@ -130,13 +130,26 @@ ogl::ogl(void)
 
 
   // Load the texture using any two methods
-#if 1
+#if 0
   GLuint Texture = loadBMP_custom("uvtemplate.bmp");
 # define REVERT 1.0f-
-#else
+#elif 1
   GLuint Texture = loadDDS("uvtemplate.DDS");
 # define REVERT
+#elif 0
+  GLuint Texture = loadDDS("Mipmaps/DL_Phy_JPG_DXT1_1.DDS");
+# define REVERT
+#elif 0
+  GLuint Texture = loadDDS("Mipmaps/DL_Phy_2_JPG_DXT1_1.DDS");
+# define REVERT
+#elif 0
+  GLuint Texture = loadDDS("Mipmaps/DL_Elev_JPG_DXT1_1.DDS");
+# define REVERT
+#else
+  GLuint Texture = loadDDS("Mipmaps/DL_Relief_JPG_DXT1_1.DDS");
+# define REVERT
 #endif
+  cout << "Texture = " << Texture << endl;
 
   // Get a handle for our "myTextureSampler" uniform
   GLint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
