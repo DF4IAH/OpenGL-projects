@@ -51,7 +51,7 @@ ogl::ogl(void)
 
   // Open a window and create its OpenGL context
   GLFWwindow* window; // (In the accompanying source code, this variable is global for simplicity)
-  window = glfwCreateWindow(1024, 768, "Tutorial 03", nullptr, nullptr);
+  window = glfwCreateWindow(width, height, "Tutorial 03", nullptr, nullptr);
   if (window == nullptr) {
     fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
     glfwTerminate();
@@ -153,14 +153,19 @@ ogl::ogl(void)
       );
 
 
+      #if 1
       // Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
       glm::mat4 Projection = glm::perspective(
         glm::radians(45.0f),
         static_cast<float>(width) / static_cast<float>(height),
         0.1f, 100.0f);
-
+      #else
       // Or, for an ortho camera :
-      //glm::mat4 Projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); // In world coordinates
+      glm::mat4 Projection = glm::ortho(
+            -10.0f, 10.0f,
+            -10.0f, 10.0f,
+             0.0f, 100.0f); // In world coordinates
+      #endif
 
       // Camera matrix
       glm::mat4 View = glm::lookAt(
