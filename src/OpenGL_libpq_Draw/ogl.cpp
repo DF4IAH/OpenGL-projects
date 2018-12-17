@@ -133,20 +133,20 @@ ogl::ogl(void)
 #if 0
   GLuint Texture = loadBMP_custom("uvtemplate.bmp");
 # define REVERT 1.0f-
-#elif 1
+#elif 0
   GLuint Texture = loadDDS("uvtemplate.DDS");
 # define REVERT
-#elif 0
-  GLuint Texture = loadDDS("Mipmaps/DL_Phy_JPG_DXT1_1.DDS");
+#elif 1
+  GLuint Texture = loadDDS("Mipmaps/World_Satview_2048x2048_DXT1.DDS");
 # define REVERT
 #elif 0
-  GLuint Texture = loadDDS("Mipmaps/DL_Phy_2_JPG_DXT1_1.DDS");
+  GLuint Texture = loadDDS("Mipmaps/World_Satview_2048x2048_DXT3.DDS");
 # define REVERT
 #elif 0
-  GLuint Texture = loadDDS("Mipmaps/DL_Elev_JPG_DXT1_1.DDS");
+  GLuint Texture = loadDDS("Mipmaps/World_Satview_2048x2048_DXT5.DDS");
 # define REVERT
-#else
-  GLuint Texture = loadDDS("Mipmaps/DL_Relief_JPG_DXT1_1.DDS");
+#elif 0
+  GLuint Texture = loadDDS("Mipmaps/DL_Phy_1_512x512_DXT3.DDS");
 # define REVERT
 #endif
   cout << "Texture = " << Texture << endl;
