@@ -53,7 +53,7 @@ ogl::ogl(void)
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
 
   // Open a window and create its OpenGL context
-  window = glfwCreateWindow(width, height, "Tutorial 09", nullptr, nullptr);
+  window = glfwCreateWindow(width, height, "Tutorial 10", nullptr, nullptr);
   if (window == nullptr) {
     fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
     glfwTerminate();
@@ -90,7 +90,7 @@ ogl::ogl(void)
   glDepthFunc(GL_LESS);
 
   // Cull triangles which normal is not towards the camera
-  glEnable(GL_CULL_FACE);
+  //glEnable(GL_CULL_FACE);
 
 
   GLuint VertexArrayID;
@@ -99,8 +99,7 @@ ogl::ogl(void)
 
 
   // Create and compile our GLSL program from the shaders
-  GLuint programID = LoadShaders("StandardShading.vertexshader", "StandardShading.fragmentshader");
-  cout << "programID = " << programID << endl;
+  GLuint programID = LoadShaders("StandardShading.vertexshader", "StandardTransparentShading.fragmentshader");
   if (!programID) {
     glDeleteVertexArrays(1, &VertexArrayID);
 
