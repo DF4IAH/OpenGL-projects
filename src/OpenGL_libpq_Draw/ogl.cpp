@@ -53,7 +53,7 @@ ogl::ogl(void)
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
 
   // Open a window and create its OpenGL context
-  window = glfwCreateWindow(width, height, "Tutorial 08", nullptr, nullptr);
+  window = glfwCreateWindow(width, height, "Tutorial 09", nullptr, nullptr);
   if (window == nullptr) {
     fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
     glfwTerminate();
@@ -139,22 +139,35 @@ ogl::ogl(void)
     return;
   }
 
+  std::vector<unsigned short> indices;
+  std::vector<glm::vec3> indexed_vertices;
+  std::vector<glm::vec2> indexed_uvs;
+  std::vector<glm::vec3> indexed_normals;
+  indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
+
+
   // Load it into a VBO
 
   GLuint vertexbuffer;
   glGenBuffers(1, &vertexbuffer);
   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, indexed_vertices.size() * sizeof(glm::vec3), &indexed_vertices[0], GL_STATIC_DRAW);
 
   GLuint uvbuffer;
   glGenBuffers(1, &uvbuffer);
   glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-  glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, indexed_uvs.size() * sizeof(glm::vec2), &indexed_uvs[0], GL_STATIC_DRAW);
 
   GLuint normalbuffer;
   glGenBuffers(1, &normalbuffer);
   glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-  glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, indexed_normals.size() * sizeof(glm::vec3), &indexed_normals[0], GL_STATIC_DRAW);
+
+  // Generate a buffer for the indices as well
+  GLuint elementbuffer;
+  glGenBuffers(1, &elementbuffer);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0] , GL_STATIC_DRAW);
 
 
   do {
@@ -224,8 +237,16 @@ ogl::ogl(void)
     );
 
 
+    // Index buffer
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+
     // Draw the triangles !
-    glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+    glDrawElements(
+      GL_TRIANGLES,                     // mode
+      indices.size(),                   // count
+      GL_UNSIGNED_SHORT,                // type
+      nullptr                           // array buffer offset
+    );
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
