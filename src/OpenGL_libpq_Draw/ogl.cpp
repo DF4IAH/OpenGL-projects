@@ -23,6 +23,7 @@ using namespace glm;
 #include "../common/texture.hpp"
 #include "../common/controls.hpp"
 #include "../common/objloader.hpp"
+#include "../common/vboindexer.hpp"
 
 #include "ogl.h"
 
@@ -52,7 +53,7 @@ ogl::ogl(void)
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
 
   // Open a window and create its OpenGL context
-  window = glfwCreateWindow(width, height, "Tutorial 07", nullptr, nullptr);
+  window = glfwCreateWindow(width, height, "Tutorial 08", nullptr, nullptr);
   if (window == nullptr) {
     fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
     glfwTerminate();
@@ -89,7 +90,7 @@ ogl::ogl(void)
   glDepthFunc(GL_LESS);
 
   // Cull triangles which normal is not towards the camera
-  //glEnable(GL_CULL_FACE);
+  glEnable(GL_CULL_FACE);
 
 
   GLuint VertexArrayID;
@@ -98,7 +99,7 @@ ogl::ogl(void)
 
 
   // Create and compile our GLSL program from the shaders
-  GLuint programID = LoadShaders("TransformVertexShader.vertexshader", "ColorFragmentShader.fragmentshader");
+  GLuint programID = LoadShaders("StandardShading.vertexshader", "StandardShading.fragmentshader");
   cout << "programID = " << programID << endl;
   if (!programID) {
     glDeleteVertexArrays(1, &VertexArrayID);
@@ -112,6 +113,9 @@ ogl::ogl(void)
 
   // Get a handle for our "MVP" uniform
   GLint MatrixID = glGetUniformLocation(programID, "MVP");
+  GLint ViewMatrixID = glGetUniformLocation(programID, "V");
+  GLint ModelMatrixID = glGetUniformLocation(programID, "M");
+  GLint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
   // Load the texture
   GLuint Texture = loadDDS("uvmap.DDS");
@@ -123,7 +127,7 @@ ogl::ogl(void)
   std::vector<glm::vec3> vertices;
   std::vector<glm::vec2> uvs;
   std::vector<glm::vec3> normals; // Won't be used at the moment.
-  bool res = loadOBJ("cube.obj", vertices, uvs, normals);
+  bool res = loadOBJ("suzanne.obj", vertices, uvs, normals);
   if (!res) {
     glDeleteProgram(programID);
     glDeleteTextures(1, &Texture);
@@ -147,7 +151,10 @@ ogl::ogl(void)
   glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
   glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
 
-  // normals are not used, yet
+  GLuint normalbuffer;
+  glGenBuffers(1, &normalbuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+  glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
 
 
   do {
@@ -168,6 +175,11 @@ ogl::ogl(void)
     // Send our transformation to the currently bound shader,
     // in the "MVP" uniform
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+    glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
+    glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
+
+    glm::vec3 lightPos = glm::vec3(4,4,4);
+    glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
     // Bind our texture in Texture Unit 0
     glActiveTexture(GL_TEXTURE0);
@@ -199,14 +211,25 @@ ogl::ogl(void)
       nullptr                           // array buffer offset
     );
 
+    // 3rd attribute buffer : normals
+    glEnableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+    glVertexAttribPointer(
+      2,                                // attribute
+      3,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      nullptr                           // array buffer offset
+    );
 
-    // Draw the triangle !
+
+    // Draw the triangles !
     glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
-
+    glDisableVertexAttribArray(2);
 
     // Swap buffers
     glfwSwapBuffers(window);
@@ -218,6 +241,7 @@ ogl::ogl(void)
   // Cleanup VBO and shader
   glDeleteBuffers(1, &vertexbuffer);
   glDeleteBuffers(1, &uvbuffer);
+  glDeleteBuffers(1, &normalbuffer);
   glDeleteProgram(programID);
   glDeleteTextures(1, &Texture);
   glDeleteVertexArrays(1, &VertexArrayID);
