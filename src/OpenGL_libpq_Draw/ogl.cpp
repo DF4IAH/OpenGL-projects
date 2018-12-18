@@ -92,6 +92,9 @@ ogl::ogl(void)
   // Cull triangles which normal is not towards the camera
   //glEnable(GL_CULL_FACE);
 
+  // Enable blending
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   GLuint VertexArrayID;
   glGenVertexArrays(1, &VertexArrayID);
