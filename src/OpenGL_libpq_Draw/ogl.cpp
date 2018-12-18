@@ -78,6 +78,9 @@ ogl::ogl(void)
   // Accept fragment if it closer to the camera than the former one
   glDepthFunc(GL_LESS);
 
+  // Cull triangles which normal is not towards the camera
+  glEnable(GL_CULL_FACE);
+
 
   GLuint VertexArrayID;
   glGenVertexArrays(1, &VertexArrayID);
