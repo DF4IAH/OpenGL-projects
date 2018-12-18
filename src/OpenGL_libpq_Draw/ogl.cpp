@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <vector>
 #include <iostream>
 
 // Include GLEW. Always include it before gl.h and glfw3.h, since it's a bit magic.
@@ -19,9 +20,9 @@ GLFWwindow* window;
 using namespace glm;
 
 #include "../common/shader.hpp"
-#include "../common/shader_own.hpp"
 #include "../common/texture.hpp"
 #include "../common/controls.hpp"
+#include "../common/objloader.hpp"
 
 #include "ogl.h"
 
@@ -51,7 +52,7 @@ ogl::ogl(void)
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
 
   // Open a window and create its OpenGL context
-  window = glfwCreateWindow(width, height, "Tutorial 06", nullptr, nullptr);
+  window = glfwCreateWindow(width, height, "Tutorial 07", nullptr, nullptr);
   if (window == nullptr) {
     fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
     glfwTerminate();
@@ -67,8 +68,17 @@ ogl::ogl(void)
     return;
   }
 
+
   // Ensure we can capture the escape key being pressed below
   glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+
+  // Hide the mouse and enable unlimited mouvement
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+  // Set the mouse at the center of the screen
+  glfwPollEvents();
+  glfwSetCursorPos(window, width/2, height/2);
+
 
   // Dark blue background
   glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
@@ -79,7 +89,7 @@ ogl::ogl(void)
   glDepthFunc(GL_LESS);
 
   // Cull triangles which normal is not towards the camera
-  glEnable(GL_CULL_FACE);
+  //glEnable(GL_CULL_FACE);
 
 
   GLuint VertexArrayID;
@@ -103,164 +113,45 @@ ogl::ogl(void)
   // Get a handle for our "MVP" uniform
   GLint MatrixID = glGetUniformLocation(programID, "MVP");
 
-#if 0
-  #if 1
-  // Projection matrix : 35° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-  glm::mat4 Projection = glm::perspective(
-    glm::radians(35.0f),
-    static_cast<float>(width) / static_cast<float>(height),
-    0.1f, 100.0f);
-  #else
-  // Or, for an ortho camera :
-  glm::mat4 Projection = glm::ortho(
-        -3.0f, 3.0f,
-        -3.0f, 3.0f,
-         0.0f, 100.0f); // In world coordinates
-  #endif
-
-  // Camera matrix
-  glm::mat4 View = glm::lookAt(
-    glm::vec3(4, 3, 3), // Camera is at (4,3,3), in World Space
-    glm::vec3(0, 0, 0), // and looks at the origin
-    glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
-    );
-
-  // Model matrix : an identity matrix (model will be at the origin)
-  glm::mat4 Model = glm::mat4(1.0f);
-  // Our ModelViewProjection : multiplication of our 3 matrices
-  glm::mat4 MVP = Projection * View * Model; // Remember, matrix multiplication is the other way around
-#endif
-
-
-  // Load the texture using any two methods
-#if 0
-  GLuint Texture = loadBMP_custom("uvtemplate.bmp");
-# define REVERT 1.0f-
-#elif 0
-  GLuint Texture = loadDDS("uvtemplate.DDS");
-# define REVERT
-#elif 1
-  GLuint Texture = loadDDS("Mipmaps/World_Satview_2048x2048_DXT1.DDS");
-# define REVERT
-#elif 0
-  GLuint Texture = loadDDS("Mipmaps/World_Satview_2048x2048_DXT3.DDS");
-# define REVERT
-#elif 0
-  GLuint Texture = loadDDS("Mipmaps/World_Satview_2048x2048_DXT5.DDS");
-# define REVERT
-#elif 0
-  GLuint Texture = loadDDS("Mipmaps/DL_Phy_1_512x512_DXT3.DDS");
-# define REVERT
-#endif
-  cout << "Texture = " << Texture << endl;
+  // Load the texture
+  GLuint Texture = loadDDS("uvmap.DDS");
 
   // Get a handle for our "myTextureSampler" uniform
   GLint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 
+  // Read our .obj file
+  std::vector<glm::vec3> vertices;
+  std::vector<glm::vec2> uvs;
+  std::vector<glm::vec3> normals; // Won't be used at the moment.
+  bool res = loadOBJ("cube.obj", vertices, uvs, normals);
+  if (!res) {
+    glDeleteProgram(programID);
+    glDeleteTextures(1, &Texture);
+    glDeleteVertexArrays(1, &VertexArrayID);
 
-  static const GLfloat g_vertex_buffer_data[] = {
-  #if 1
-    // Our vertices. Three consecutive floats give a 3D vertex; Three consecutive vertices give a triangle.
-    // A cube has 6 faces with 2 triangles each, so this makes 6*2=12 triangles, and 12*3 vertices
-    -1.0f,-1.0f,-1.0f, // triangle 1 : begin
-    -1.0f,-1.0f, 1.0f,
-    -1.0f, 1.0f, 1.0f, // triangle 1 : end
-     1.0f, 1.0f,-1.0f, // triangle 2 : begin
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f,-1.0f, // triangle 2 : end
-     1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f,-1.0f,
-     1.0f,-1.0f,-1.0f,
-     1.0f, 1.0f,-1.0f,
-     1.0f,-1.0f,-1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f,-1.0f,
-     1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-    -1.0f,-1.0f, 1.0f,
-     1.0f,-1.0f, 1.0f,
-     1.0f, 1.0f, 1.0f,
-     1.0f,-1.0f,-1.0f,
-     1.0f, 1.0f,-1.0f,
-     1.0f,-1.0f,-1.0f,
-     1.0f, 1.0f, 1.0f,
-     1.0f,-1.0f, 1.0f,
-     1.0f, 1.0f, 1.0f,
-     1.0f, 1.0f,-1.0f,
-    -1.0f, 1.0f,-1.0f,
-     1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-     1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f, 1.0f,
-     1.0f,-1.0f, 1.0f
-  #else
-    // An array of 3 vectors which represents 3 vertices
-    -1.0f,-1.0f, 0.0f,
-     1.0f,-1.0f, 0.0f,
-     0.0f, 1.0f, 0.0f
-  #endif
-  };
+    // Close OpenGL window and terminate GLFW
+    glfwTerminate();
 
-  // Two UV coordinates for each vertex. They were created with Blender.
-  static const GLfloat g_uv_buffer_data[] = {
-    0.0001f, REVERT 0.0001f,
-    0.0001f, REVERT 0.3333f,
-    0.3334f, REVERT 0.3333f,
-    0.9999f, REVERT 0.0001f,
-    0.6667f, REVERT 0.3333f,
-    0.9999f, REVERT 0.3333f,
-    0.6667f, REVERT 0.3333f,
-    0.3333f, REVERT 0.6667f,
-    0.6667f, REVERT 0.6667f,
-    0.9999f, REVERT 0.0001f,
-    0.6667f, REVERT 0.0001f,
-    0.6667f, REVERT 0.3333f,
-    0.0001f, REVERT 0.0001f,
-    0.3333f, REVERT 0.3333f,
-    0.3333f, REVERT 0.0001f,
-    0.6667f, REVERT 0.3333f,
-    0.3333f, REVERT 0.3333f,
-    0.3333f, REVERT 0.6667f,
-    0.9999f, REVERT 0.6667f,
-    0.9999f, REVERT 0.3333f,
-    0.6667f, REVERT 0.3333f,
-    0.6667f, REVERT 0.0001f,
-    0.3333f, REVERT 0.3333f,
-    0.6667f, REVERT 0.3333f,
-    0.3333f, REVERT 0.3333f,
-    0.6667f, REVERT 0.0001f,
-    0.3333f, REVERT 0.0001f,
-    0.0001f, REVERT 0.3333f,
-    0.0001f, REVERT 0.6667f,
-    0.3333f, REVERT 0.6667f,
-    0.0001f, REVERT 0.3333f,
-    0.3333f, REVERT 0.6667f,
-    0.3333f, REVERT 0.3333f,
-    0.6667f, REVERT 0.6667f,
-    0.9999f, REVERT 0.6667f,
-    0.6667f, REVERT 0.3333f
-  };
+    return;
+  }
 
+  // Load it into a VBO
 
-  // Vertex buffer
-  // This will identify our vertex buffer
   GLuint vertexbuffer;
   glGenBuffers(1, &vertexbuffer);
   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
 
   GLuint uvbuffer;
   glGenBuffers(1, &uvbuffer);
   glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(g_uv_buffer_data), g_uv_buffer_data, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
+
+  // normals are not used, yet
 
 
   do {
+
     // Clear the screen.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -309,13 +200,8 @@ ogl::ogl(void)
     );
 
 
-    #if 1
-    // Draw the cube !
-    glDrawArrays(GL_TRIANGLES, 0, 12*3); // 12*3 indices starting at 0 -> 12 triangles -> 6 squares
-    #else
     // Draw the triangle !
-    glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
-    #endif
+    glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 
 
     glDisableVertexAttribArray(0);
@@ -325,6 +211,7 @@ ogl::ogl(void)
     // Swap buffers
     glfwSwapBuffers(window);
     glfwPollEvents();
+
   } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);  // Check if the ESC key was pressed or the window was closed
 
 
