@@ -126,7 +126,7 @@ ogl::ogl(void)
   // Read our .obj file
   std::vector<glm::vec3> vertices;
   std::vector<glm::vec2> uvs;
-  std::vector<glm::vec3> normals; // Won't be used at the moment.
+  std::vector<glm::vec3> normals;
   bool res = loadOBJ("suzanne.obj", vertices, uvs, normals);
   if (!res) {
     glDeleteProgram(programID);
@@ -159,7 +159,7 @@ ogl::ogl(void)
 
   do {
 
-    // Clear the screen.
+    // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Use our shader
@@ -191,7 +191,7 @@ ogl::ogl(void)
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
     glVertexAttribPointer(
-      0,                                // attribute 0. No particular reason for 0, but must match the layout in the shader.
+      0,                                // attribute
       3,                                // size
       GL_FLOAT,                         // type
       GL_FALSE,                         // normalized?
@@ -203,8 +203,8 @@ ogl::ogl(void)
     glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
     glVertexAttribPointer(
-      1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-      2,                                // size : U+V => 2
+      1,                                // attribute
+      2,                                // size
       GL_FLOAT,                         // type
       GL_FALSE,                         // normalized?
       0,                                // stride
