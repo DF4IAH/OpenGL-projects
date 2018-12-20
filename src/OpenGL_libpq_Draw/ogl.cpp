@@ -151,7 +151,7 @@ ogl::ogl(void)
   // Dark blue background
   glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
-//#define USE_THE_GOOD_ONE
+#define USE_THE_GOOD_ONE
 #ifdef USE_THE_GOOD_ONE
   // Enable depth test
   glEnable(GL_DEPTH_TEST); // SHOULD BE GL_DEPTH_TEST ! WILL TRIGGER AN ERROR MESSAGE !
@@ -170,17 +170,19 @@ ogl::ogl(void)
   glEnable(GL_CULL_FACE_MODE); // SHOULD BE GL_CULL_FACE ! WILL TRIGGER AN ERROR MESSAGE !
 #endif
 
+#if 0
+  // Enable blending
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+#endif
+
   GLuint VertexArrayID;
   glGenVertexArrays(1, &VertexArrayID);
   glBindVertexArray(VertexArrayID);
 
 
   // Create and compile our GLSL program from the shaders
-#ifdef USE_THE_GOOD_ONE
   GLuint programID = LoadShaders("StandardShading.vertexshader", "StandardShading.fragmentshader");
-#else
-  GLuint programID = LoadShaders("StandardShading.vertexshader", "StandardShading_WithSyntaxError.fragmentshader");
-#endif
   if (!programID) {
     glDeleteVertexArrays(1, &VertexArrayID);
 
