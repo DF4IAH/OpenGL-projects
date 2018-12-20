@@ -24,7 +24,6 @@ using namespace glm;
 #include "../common/controls.hpp"
 #include "../common/objloader.hpp"
 #include "../common/vboindexer.hpp"
-#include "../common/text2D.hpp"
 
 #include "ogl.h"
 
@@ -54,7 +53,7 @@ ogl::ogl(void)
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
 
   // Open a window and create its OpenGL context
-  window = glfwCreateWindow(width, height, "Tutorial 11", nullptr, nullptr);
+  window = glfwCreateWindow(width, height, "Tutorial 10", nullptr, nullptr);
   if (window == nullptr) {
     fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
     glfwTerminate();
@@ -91,7 +90,7 @@ ogl::ogl(void)
   glDepthFunc(GL_LESS);
 
   // Cull triangles which normal is not towards the camera
-  glEnable(GL_CULL_FACE);
+  //glEnable(GL_CULL_FACE);
 
   // Enable blending
   glEnable(GL_BLEND);
@@ -103,7 +102,7 @@ ogl::ogl(void)
 
 
   // Create and compile our GLSL program from the shaders
-  GLuint programID = LoadShaders("StandardShading.vertexshader", "StandardShading.fragmentshader");
+  GLuint programID = LoadShaders("StandardShading.vertexshader", "StandardTransparentShading.fragmentshader");
   if (!programID) {
     glDeleteVertexArrays(1, &VertexArrayID);
 
@@ -171,9 +170,6 @@ ogl::ogl(void)
   glGenBuffers(1, &elementbuffer);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0] , GL_STATIC_DRAW);
-
-  // Initialize our little text library with the Holstein font
-  initText2D("Holstein.DDS");
 
 
   // For speed computation
@@ -273,10 +269,6 @@ ogl::ogl(void)
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(2);
 
-    char text[256];
-    sprintf(text,"%.2f sec", glfwGetTime());
-    printText2D(text, 10, 500, 60);
-
     // Swap buffers
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -288,13 +280,9 @@ ogl::ogl(void)
   glDeleteBuffers(1, &vertexbuffer);
   glDeleteBuffers(1, &uvbuffer);
   glDeleteBuffers(1, &normalbuffer);
-  glDeleteBuffers(1, &elementbuffer);
   glDeleteProgram(programID);
   glDeleteTextures(1, &Texture);
   glDeleteVertexArrays(1, &VertexArrayID);
-
-  // Delete the text's VBO, the shader and the texture
-  cleanupText2D();
 
   // Close OpenGL window and terminate GLFW
   glfwTerminate();
