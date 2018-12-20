@@ -24,7 +24,6 @@ using namespace glm;
 #include "../common/controls.hpp"
 #include "../common/objloader.hpp"
 #include "../common/vboindexer.hpp"
-#include "../common/tangentspace.hpp"
 
 #include "ogl.h"
 
@@ -33,6 +32,47 @@ using namespace std;
 
 const int width   = 1024;
 const int height  =  768;
+
+
+// The ARB_debug_output extension, which is used in this tutorial as an example,
+// can call a function of ours with error messages.
+// This function must have this precise prototype ( parameters and return value )
+// See http://www.opengl.org/registry/specs/ARB/debug_output.txt , "New Types" :
+//	The callback function that applications can define, and
+//	is accepted by DebugMessageCallbackARB, is defined as:
+//
+//	    typedef void (APIENTRY *DEBUGPROCARB)(enum source,
+//	                                          enum type,
+//	                                          uint id,
+//	                                          enum severity,
+//	                                          sizei length,
+//	                                          const char* message,
+//	                                          void* userParam);
+void APIENTRY DebugOutputCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
+  printf ("OpenGL Debug Output message : ");
+
+  if      (source == GL_DEBUG_SOURCE_API_ARB)			printf("Source : API; ");
+  else if (source == GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB)	        printf("Source : WINDOW_SYSTEM; ");
+  else if (source == GL_DEBUG_SOURCE_SHADER_COMPILER_ARB)	printf("Source : SHADER_COMPILER; ");
+  else if (source == GL_DEBUG_SOURCE_THIRD_PARTY_ARB)		printf("Source : THIRD_PARTY; ");
+  else if (source == GL_DEBUG_SOURCE_APPLICATION_ARB)		printf("Source : APPLICATION; ");
+  else if (source == GL_DEBUG_SOURCE_OTHER_ARB)			printf("Source : OTHER; ");
+
+  if      (type == GL_DEBUG_TYPE_ERROR_ARB)			printf("Type : ERROR; ");
+  else if (type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB)	printf("Type : DEPRECATED_BEHAVIOR; ");
+  else if (type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB)        printf("Type : UNDEFINED_BEHAVIOR; ");
+  else if (type == GL_DEBUG_TYPE_PORTABILITY_ARB)		printf("Type : PORTABILITY; ");
+  else if (type == GL_DEBUG_TYPE_PERFORMANCE_ARB)		printf("Type : PERFORMANCE; ");
+  else if (type == GL_DEBUG_TYPE_OTHER_ARB)			printf("Type : OTHER; ");
+
+  if      (severity == GL_DEBUG_SEVERITY_HIGH_ARB)		printf("Severity : HIGH; ");
+  else if (severity == GL_DEBUG_SEVERITY_MEDIUM_ARB)		printf("Severity : MEDIUM; ");
+  else if (severity == GL_DEBUG_SEVERITY_LOW_ARB)		printf("Severity : LOW; ");
+
+  // You can set a breakpoint here ! Your debugger will stop the program,
+  // and the callstack will immediately show you the offending call.
+  printf("Message : %s END.\n", message);
+}
 
 
 ogl::ogl(void)
@@ -53,8 +93,17 @@ ogl::ogl(void)
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
 
+  // ARB_debug_output is a bit special,
+  // it requires creating the OpenGL context
+  // with paticular flags.
+  // GLFW exposes it this way; if you use SDL, SFML, freeGLUT
+  // or other, check the documentation.
+  // If you use custom code, read the spec :
+  // http://www.opengl.org/registry/specs/ARB/debug_output.txt
+  glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
+
   // Open a window and create its OpenGL context
-  window = glfwCreateWindow(width, height, "Tutorial 13", nullptr, nullptr);
+  window = glfwCreateWindow(width, height, "Tutorial 12", nullptr, nullptr);
   if (window == nullptr) {
     fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
     glfwTerminate();
@@ -70,6 +119,23 @@ ogl::ogl(void)
     return;
   }
 
+  // Example 1 :
+  if (GLEW_AMD_seamless_cubemap_per_texture) {
+    printf("The GL_AMD_seamless_cubemap_per_texture is present, (but we're not goint to use it)\n");
+    // Now it's legal to call glTexParameterf with the TEXTURE_CUBE_MAP_SEAMLESS_ARB parameter
+    // You HAVE to test this, because obviously, this code would fail on non-AMD hardware.
+  }
+
+  // Example 2 :
+  if (GLEW_ARB_debug_output) {
+    printf("The OpenGL implementation provides debug output. Let's use it !\n");
+    glDebugMessageCallbackARB(&DebugOutputCallback, NULL);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+  } else {
+    printf("ARB_debug_output unavailable. You have to use glGetError() and/or gDebugger to catch mistakes.\n");
+    // Please use #define USE_THE_GOOD_ONE
+  }
+
 
   // Ensure we can capture the escape key being pressed below
   glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
@@ -81,9 +147,12 @@ ogl::ogl(void)
   glfwPollEvents();
   glfwSetCursorPos(window, width/2, height/2);
 
+
   // Dark blue background
   glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
+//#define USE_THE_GOOD_ONE
+#ifdef USE_THE_GOOD_ONE
   // Enable depth test
   glEnable(GL_DEPTH_TEST); // SHOULD BE GL_DEPTH_TEST ! WILL TRIGGER AN ERROR MESSAGE !
   // Accept fragment if it closer to the camera than the former one
@@ -91,14 +160,27 @@ ogl::ogl(void)
 
   // Cull triangles which normal is not towards the camera
   glEnable(GL_CULL_FACE); // SHOULD BE GL_CULL_FACE ! WILL TRIGGER AN ERROR MESSAGE !
+#else
+  // Enable depth test
+  glEnable(GL_DEPTH); // SHOULD BE GL_DEPTH_TEST ! WILL TRIGGER AN ERROR MESSAGE !
+  // Accept fragment if it closer to the camera than the former one
+  glDepthFunc(GL_LEFT);  // SHOULD BE GL_LESS ! WILL TRIGGER AN ERROR MESSAGE !
 
+  // Cull triangles which normal is not towards the camera
+  glEnable(GL_CULL_FACE_MODE); // SHOULD BE GL_CULL_FACE ! WILL TRIGGER AN ERROR MESSAGE !
+#endif
 
   GLuint VertexArrayID;
   glGenVertexArrays(1, &VertexArrayID);
   glBindVertexArray(VertexArrayID);
 
+
   // Create and compile our GLSL program from the shaders
-  GLuint programID = LoadShaders("NormalMapping.vertexshader", "NormalMapping.fragmentshader");
+#ifdef USE_THE_GOOD_ONE
+  GLuint programID = LoadShaders("StandardShading.vertexshader", "StandardShading.fragmentshader");
+#else
+  GLuint programID = LoadShaders("StandardShading.vertexshader", "StandardShading_WithSyntaxError.fragmentshader");
+#endif
   if (!programID) {
     glDeleteVertexArrays(1, &VertexArrayID);
 
@@ -113,29 +195,22 @@ ogl::ogl(void)
   GLint MatrixID = glGetUniformLocation(programID, "MVP");
   GLint ViewMatrixID = glGetUniformLocation(programID, "V");
   GLint ModelMatrixID = glGetUniformLocation(programID, "M");
-  GLint ModelView3x3MatrixID = glGetUniformLocation(programID, "MV3x3");
   GLint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
   // Load the texture
-  GLuint DiffuseTexture = loadDDS("diffuse.DDS");
-  GLuint NormalTexture = loadBMP_custom("normal.bmp");
-  GLuint SpecularTexture = loadDDS("specular.DDS");
+  GLuint Texture = loadDDS("uvmap.DDS");
 
   // Get a handle for our "myTextureSampler" uniform
-  GLint DiffuseTextureID  = glGetUniformLocation(programID, "DiffuseTextureSampler");
-  GLint NormalTextureID  = glGetUniformLocation(programID, "NormalTextureSampler");
-  GLint SpecularTextureID = glGetUniformLocation(programID, "SpecularTextureSampler");
+  GLint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 
   // Read our .obj file
   std::vector<glm::vec3> vertices;
   std::vector<glm::vec2> uvs;
   std::vector<glm::vec3> normals;
-  bool res = loadOBJ("cylinder.obj", vertices, uvs, normals);
+  bool res = loadOBJ("suzanne.obj", vertices, uvs, normals);
   if (!res) {
     glDeleteProgram(programID);
-    glDeleteTextures(1, &DiffuseTexture);
-    glDeleteTextures(1, &NormalTexture);
-    glDeleteTextures(1, &SpecularTexture);
+    glDeleteTextures(1, &Texture);
     glDeleteVertexArrays(1, &VertexArrayID);
 
     // Close OpenGL window and terminate GLFW
@@ -144,21 +219,12 @@ ogl::ogl(void)
     return;
   }
 
-  std::vector<glm::vec3> tangents;
-  std::vector<glm::vec3> bitangents;
-  computeTangentBasis(
-    vertices, uvs, normals, // input
-    tangents, bitangents    // output
-  );
-
   std::vector<unsigned short> indices;
   std::vector<glm::vec3> indexed_vertices;
   std::vector<glm::vec2> indexed_uvs;
   std::vector<glm::vec3> indexed_normals;
-  std::vector<glm::vec3> indexed_tangents;
-  std::vector<glm::vec3> indexed_bitangents;
-  indexVBO_TBN(vertices, uvs, normals, tangents, bitangents,
-               indices, indexed_vertices, indexed_uvs, indexed_normals, indexed_tangents, indexed_bitangents);
+  indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
+
 
   // Load it into a VBO
 
@@ -176,16 +242,6 @@ ogl::ogl(void)
   glGenBuffers(1, &normalbuffer);
   glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
   glBufferData(GL_ARRAY_BUFFER, indexed_normals.size() * sizeof(glm::vec3), &indexed_normals[0], GL_STATIC_DRAW);
-
-  GLuint tangentbuffer;
-  glGenBuffers(1, &tangentbuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, tangentbuffer);
-  glBufferData(GL_ARRAY_BUFFER, indexed_tangents.size() * sizeof(glm::vec3), &indexed_tangents[0], GL_STATIC_DRAW);
-
-  GLuint bitangentbuffer;
-  glGenBuffers(1, &bitangentbuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, bitangentbuffer);
-  glBufferData(GL_ARRAY_BUFFER, indexed_bitangents.size() * sizeof(glm::vec3), &indexed_bitangents[0], GL_STATIC_DRAW);
 
   // Generate a buffer for the indices as well
   GLuint elementbuffer;
@@ -222,8 +278,6 @@ ogl::ogl(void)
     glm::mat4 ProjectionMatrix = getProjectionMatrix();
     glm::mat4 ViewMatrix = getViewMatrix();
     glm::mat4 ModelMatrix = glm::mat4(1.0);
-    glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
-    glm::mat3 ModelView3x3Matrix = glm::mat3(ModelViewMatrix);
     glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
     // Send our transformation to the currently bound shader,
@@ -231,28 +285,15 @@ ogl::ogl(void)
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
     glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
     glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
-    glUniformMatrix3fv(ModelView3x3MatrixID, 1, GL_FALSE, &ModelView3x3Matrix[0][0]);
 
-    glm::vec3 lightPos = glm::vec3(0,0,4);
+    glm::vec3 lightPos = glm::vec3(4,4,4);
     glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
-    // Bind our diffuse texture in Texture Unit 0
+    // Bind our texture in Texture Unit 0
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, DiffuseTexture);
-    // Set our "DiffuseTextureSampler" sampler to use Texture Unit 0
-    glUniform1i(DiffuseTextureID, 0);
-
-    // Bind our normal texture in Texture Unit 1
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, NormalTexture);
-    // Set our "NormalTextureSampler" sampler to use Texture Unit 1
-    glUniform1i(NormalTextureID, 1);
-
-    // Bind our specular texture in Texture Unit 2
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, SpecularTexture);
-    // Set our "SpecularTextureSampler" sampler to use Texture Unit 2
-    glUniform1i(SpecularTextureID, 2);
+    glBindTexture(GL_TEXTURE_2D, Texture);
+    // Set our "myTextureSampler" sampler to use Texture Unit 0
+    glUniform1i(TextureID, 0);
 
     // 1st attribute buffer : vertices
     glEnableVertexAttribArray(0);
@@ -290,30 +331,6 @@ ogl::ogl(void)
       nullptr                           // array buffer offset
     );
 
-    // 4th attribute buffer : tangents
-    glEnableVertexAttribArray(3);
-    glBindBuffer(GL_ARRAY_BUFFER, tangentbuffer);
-    glVertexAttribPointer(
-      3,                                // attribute
-      3,                                // size
-      GL_FLOAT,                         // type
-      GL_FALSE,                         // normalized?
-      0,                                // stride
-      nullptr                           // array buffer offset
-    );
-
-    // 5th attribute buffer : bitangents
-    glEnableVertexAttribArray(4);
-    glBindBuffer(GL_ARRAY_BUFFER, bitangentbuffer);
-    glVertexAttribPointer(
-      4,                                // attribute
-      3,                                // size
-      GL_FLOAT,                         // type
-      GL_FALSE,                         // normalized?
-      0,                                // stride
-      nullptr                           // array buffer offset
-    );
-
 
     // Index buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
@@ -329,88 +346,22 @@ ogl::ogl(void)
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(2);
-    glDisableVertexAttribArray(3);
-    glDisableVertexAttribArray(4);
 
-#ifdef GL_DEBUG
-    ////////////////////////////////////////////////////////
-    // DEBUG ONLY !!!
-    // Don't use this in real code !!
-    ////////////////////////////////////////////////////////
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf((const GLfloat*)&ProjectionMatrix[0]);
-    glMatrixMode(GL_MODELVIEW);
-    glm::mat4 MV = ViewMatrix * ModelMatrix;
-    glLoadMatrixf((const GLfloat*)&MV[0]);
-
-
-    glUseProgram(0);
-
-    // normals
-    glColor3f(0,0,1);
-    glBegin(GL_LINES);
-    for (unsigned int i=0; i<indices.size(); i++){
-      glm::vec3 p = indexed_vertices[indices[i]];
-      glVertex3fv(&p.x);
-      glm::vec3 o = glm::normalize(indexed_normals[indices[i]]);
-      p+=o*0.1f;
-      glVertex3fv(&p.x);
-    }
-    glEnd();
-    // tangents
-    glColor3f(1,0,0);
-    glBegin(GL_LINES);
-    for (unsigned int i=0; i<indices.size(); i++){
-      glm::vec3 p = indexed_vertices[indices[i]];
-      glVertex3fv(&p.x);
-      glm::vec3 o = glm::normalize(indexed_tangents[indices[i]]);
-      p+=o*0.1f;
-      glVertex3fv(&p.x);
-    }
-    glEnd();
-    // bitangents
-    glColor3f(0,1,0);
-    glBegin(GL_LINES);
-    for (unsigned int i=0; i<indices.size(); i++){
-      glm::vec3 p = indexed_vertices[indices[i]];
-      glVertex3fv(&p.x);
-      glm::vec3 o = glm::normalize(indexed_bitangents[indices[i]]);
-      p+=o*0.1f;
-      glVertex3fv(&p.x);
-    }
-    glEnd();
-    // light pos
-    glColor3f(1,1,1);
-    glBegin(GL_LINES);
-      glVertex3fv(&lightPos.x);
-      lightPos+=glm::vec3(1,0,0)*0.1f;
-      glVertex3fv(&lightPos.x);
-      lightPos-=glm::vec3(1,0,0)*0.1f;
-      glVertex3fv(&lightPos.x);
-      lightPos+=glm::vec3(0,1,0)*0.1f;
-      glVertex3fv(&lightPos.x);
-    glEnd();
-#endif
+    glfwPollEvents();
 
     // Swap buffers
     glfwSwapBuffers(window);
 
-    glfwPollEvents();
-    } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);  // Check if the ESC key was pressed or the window was closed
+  } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);  // Check if the ESC key was pressed or the window was closed
 
 
   // Cleanup VBO and shader
   glDeleteBuffers(1, &vertexbuffer);
   glDeleteBuffers(1, &uvbuffer);
   glDeleteBuffers(1, &normalbuffer);
-  glDeleteBuffers(1, &tangentbuffer);
-  glDeleteBuffers(1, &bitangentbuffer);
   glDeleteBuffers(1, &elementbuffer);
   glDeleteProgram(programID);
-  glDeleteTextures(1, &DiffuseTexture);
-  glDeleteTextures(1, &NormalTexture);
-  glDeleteTextures(1, &SpecularTexture);
+  glDeleteTextures(1, &Texture);
   glDeleteVertexArrays(1, &VertexArrayID);
 
   // Close OpenGL window and terminate GLFW
