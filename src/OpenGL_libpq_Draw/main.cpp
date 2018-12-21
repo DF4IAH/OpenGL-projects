@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "ogl.h"
 #include "pq.h"
@@ -23,7 +24,26 @@ int main(int argc, char* argv[])
 
     cout << "main: Got " << rowCnt << " rows with " << colCnt << " columns." << endl;
 
-#if 1
+    std::vector< std::vector< int > > heightVecVec;
+    std::vector< int > heightRowVec;
+
+    heightRowVec.clear();
+    heightRowVec.push_back(1); heightRowVec.push_back(2); heightRowVec.push_back(3);
+    heightVecVec.push_back(heightRowVec);
+
+    heightRowVec.clear();
+    heightRowVec.push_back(3); heightRowVec.push_back(7); heightRowVec.push_back(1);
+    heightVecVec.push_back(heightRowVec);
+
+    heightRowVec.clear();
+    heightRowVec.push_back(4); heightRowVec.push_back(5); heightRowVec.push_back(2);
+    heightVecVec.push_back(heightRowVec);
+
+    ogl.setupHeightMesh(heightVecVec, 1.0f);
+
+    asm volatile("nop");
+
+#if 0
     for (int rowIdx = 0; rowIdx < rowCnt; rowIdx++) {
       cout << endl << "Row " << rowIdx << ":\t";
       for (int colIdx = 0; colIdx < colCnt; colIdx++) {
