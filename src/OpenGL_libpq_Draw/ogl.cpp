@@ -177,8 +177,10 @@ ogl::~ogl()
 }
 
 
-void ogl::setupHeightMesh(const std::vector< std::vector< int > > heightVecVec, float scaleHeight)
+void ogl::setupHeightMesh(const std::vector< std::vector< int > > heightVecVec, float scaleHeight, GLfloat uvMulX, GLfloat uvAddX, GLfloat uvMulZ, GLfloat uvAddZ)
 {
+  std::vector<glm::vec3> yMap;
+
   if (!ready || heightVecVec.empty()) {
     cerr << "ERROR ogl: construction failed before, setupMesh() aborted." << endl;
     return;
@@ -205,10 +207,7 @@ void ogl::setupHeightMesh(const std::vector< std::vector< int > > heightVecVec, 
       const GLfloat tgtUsrZ = -(tgtRowIdx / GLfloat(tgtRowCnt - 2)) * 2.f + 1.f;
 
       const glm::vec3 thsVertex(tgtUsrX, tgtUsrY, tgtUsrZ);
-      vertices.push_back(thsVertex);
-
-      const glm::vec2 thsUv(tgtUsrX, tgtUsrZ);
-      uvs.push_back(thsUv);
+      yMap.push_back(thsVertex);
     }
 
     if (tgtRowIdx >= tgtRowCnt - 2) {
@@ -228,100 +227,185 @@ void ogl::setupHeightMesh(const std::vector< std::vector< int > > heightVecVec, 
       const GLfloat bilUsrZ = -((tgtRowIdx + 1) / GLfloat(tgtRowCnt - 2)) * 2.f + 1.f;
 
       const glm::vec3 thsVertex(bilUsrX, bilUsrY, bilUsrZ);
-      vertices.push_back(thsVertex);
-
-      const glm::vec2 thsUv(bilUsrX, bilUsrZ);
-      uvs.push_back(thsUv);
+      yMap.push_back(thsVertex);
     }
   }
 
-  /* Run again for the normals */
+  /* Run again for all triangles */
   /* Target map */
   uint16_t midIdxY = 0;
-  for (uint16_t tgtRowIdx = 0; tgtRowIdx < tgtRowCnt; tgtRowIdx += 2, ++midIdxY) {
-    /* The user VecVec row */
-    uint16_t midIdxX = 0;
-    for (uint16_t tgtColIdx = 0; tgtColIdx < tgtColCnt - 1; tgtColIdx += 2, ++midIdxX) {
-      cout << endl << "midIdxY=" << midIdxY << "\t midIdxX=" << midIdxX;
+  for (uint16_t tgtRowIdx = 0; tgtRowIdx < tgtRowCnt - 1; ++tgtRowIdx) {
+    midIdxY = tgtRowIdx >> 1;
 
-      if (0 == (tgtRowIdx % 2)) {
-        cout << ",\t vertex row:" << endl << flush;
-      } else {
-        cout << ",\t bi-linear row:" << endl << flush;
-      }
+    for (uint16_t midIdxX = 0; midIdxX < usrWidth - (tgtRowIdx % 2); ++midIdxX) {  // Bi-linear rows are one element shorter
+      cout << endl << "midIdxY=" << midIdxY << "\t midIdxX=" << midIdxX;
 
       glm::vec3 thsNormAdd(0, 0, 0);
       glm::vec3 thsNorm;
 
-      const glm::vec3 midVertex = vertices.at(getIdxFromCoord(midIdxX, midIdxY, usrWidth));
+      const uint32_t midIdx = getIdxFromYMapCoord(midIdxX, midIdxY, usrWidth);
+      const glm::vec3 midVertex = yMap.at(midIdx);
       glm::vec3 frame1Vertex;
       glm::vec3 frame2Vertex;
 
-      int32_t frameIdxY;
-      int32_t frameIdxX;
+      if (0 == (tgtRowIdx % 2)) {
+        /* The user VecVec row */
+        cout << " of vertex row:" << endl << flush;
 
-      for (uint16_t dy = 0; dy <= 1; ++dy) {
-        for (uint16_t dx = 0; dx <= 1; ++dx) {
-          if (0 == (tgtRowIdx % 2)) {
+        for (uint16_t dy = 0; dy <= 1; ++dy) {
+          for (uint16_t dx = 0; dx <= 1; ++dx) {
             /* Given vertices line */
-            frameIdxY = midIdxY -1 +dy;
-            frameIdxX = midIdxX -1 +dx;
+            uint32_t idx1 = 255, idx2 = 255;
 
-          } else {
-            /* Bi-linear line */
-            frameIdxY = midIdxY +dy;
-            frameIdxX = midIdxX +dx;
+            if ((midIdxY >= 1) && (midIdxY < usrHeight - 1) &&
+                (midIdxX >= 1) && (midIdxX < usrWidth  - 1)) {
+
+              if (!dy && !dx) {
+                /* Down triangle */
+                idx1 = getIdxFromYMapCoord(uint16_t(midIdxX - 1), uint16_t(tgtRowIdx - 1), usrWidth);
+                idx2 = getIdxFromYMapCoord(uint16_t(midIdxX    ), uint16_t(tgtRowIdx - 1), usrWidth);
+                cout << " DN";
+
+              } else if (!dy &&  dx) {
+                 /* Left triangle */
+                idx1 = getIdxFromYMapCoord(uint16_t(midIdxX - 1), uint16_t(tgtRowIdx - 1), usrWidth);
+                idx2 = getIdxFromYMapCoord(uint16_t(midIdxX - 1), uint16_t(tgtRowIdx + 1), usrWidth);
+                cout << " LE";
+
+              } else if ( dy && !dx) {
+                 /* Right triangle */
+                idx1 = getIdxFromYMapCoord(uint16_t(midIdxX    ), uint16_t(tgtRowIdx - 1), usrWidth);
+                idx2 = getIdxFromYMapCoord(uint16_t(midIdxX    ), uint16_t(tgtRowIdx + 1), usrWidth);
+                cout << " RI";
+
+              } else if ( dy &&  dx) {
+                 /* Up triangle */
+                idx1 = getIdxFromYMapCoord(uint16_t(midIdxX - 1), uint16_t(tgtRowIdx + 1), usrWidth);
+                idx2 = getIdxFromYMapCoord(uint16_t(midIdxX    ), uint16_t(tgtRowIdx + 1), usrWidth);
+                cout << " UP";
+              }
+              frame1Vertex  = yMap.at(idx1);
+              frame2Vertex  = yMap.at(idx2);
+
+              cout << ", dy=" << dy << " dx=" << dx << ": mid=" << midVertex.x << "/" << midVertex.z <<" (idx=" << midIdx << "), frame1=" << frame1Vertex.x << "/" << frame1Vertex.z << " (idx=" << idx1 << "), frame2=" << frame2Vertex.x << "/" << frame2Vertex.z << "(idx=" << idx2 << ")";
+
+              /* Push triangle to vertices */
+              {
+                vertices.push_back(midVertex);
+                vertices.push_back(frame1Vertex);
+                vertices.push_back(frame2Vertex);
+              }
+
+              /* Push triangle to uvs */
+              {
+                const glm::vec2    midUv(   midVertex.x * uvMulX + uvAddX,    midVertex.z * uvMulZ + uvAddZ);
+                const glm::vec2 frame1Uv(frame1Vertex.x * uvMulX + uvAddX, frame1Vertex.z * uvMulZ + uvAddZ);
+                const glm::vec2 frame2Uv(frame2Vertex.x * uvMulX + uvAddX, frame2Vertex.z * uvMulZ + uvAddZ);
+
+                uvs.push_back(midUv);
+                uvs.push_back(frame1Uv);
+                uvs.push_back(frame2Uv);
+              }
+
+              /* Bases of the triangle */
+              const glm::vec3 delta1 = frame1Vertex - midVertex;
+              const glm::vec3 delta2 = frame2Vertex - midVertex;
+
+              thsNorm = glm::vec3(delta2) * glm::vec3(delta1);
+              if (thsNorm.y < 0) {
+                /* Make right handed */
+                thsNorm = -thsNorm;
+              }
+              cout << "\t taken." << endl << flush;
+
+            } else {
+              thsNorm = vec3(0, 1, 0);  // Up
+              cout << "\t dropped." << endl << flush;
+            }
+
+            /* Push triangle to normals */
+            normals.push_back(thsNorm);
           }
+        }
 
-          cout << "frameIdxY=" << frameIdxY << "\t frameIdxX=" << frameIdxX;
+      } else {
+        /* The bi-linear row */
+        cout << " of bi-linear row:" << endl << flush;
 
-          if ((frameIdxY >= 0) && (frameIdxX >= 0) && (
-              (0 == (tgtRowIdx % 2) && (frameIdxY < usrHeight) && (frameIdxX <  usrWidth    )) ||     // Given vertices line
-              (1 == (tgtRowIdx % 2) && (frameIdxY < usrHeight) && (frameIdxX < (usrWidth - 1))))) {   // Bi-linear line
+        for (uint16_t dy = 0; dy <= 1; ++dy) {
+          for (uint16_t dx = 0; dx <= 1; ++dx) {
+            /* Given vertices line */
+            uint32_t idx1 = 255, idx2 = 255;
 
-            if (!dy && !dx) {
-              /* Down triangle */
-              frame1Vertex  = vertices.at(getIdxFromCoord(uint16_t(frameIdxX    ), uint16_t(frameIdxY    ), usrWidth));
-              frame2Vertex  = vertices.at(getIdxFromCoord(uint16_t(frameIdxX + 1), uint16_t(frameIdxY    ), usrWidth));
+            if ((midIdxY < usrHeight - 1) &&
+                (midIdxX < usrWidth  - 1)) {
 
-            } else if (!dy &&  dx) {
-               /* Left triangle */
-              frame1Vertex  = vertices.at(getIdxFromCoord(uint16_t(frameIdxX    ), uint16_t(frameIdxY    ), usrWidth));
-              frame2Vertex  = vertices.at(getIdxFromCoord(uint16_t(frameIdxX    ), uint16_t(frameIdxY + 1), usrWidth));
+              if (!dy && !dx) {
+                /* Down triangle */
+                idx1 = getIdxFromYMapCoord(uint16_t(midIdxX    ), uint16_t(tgtRowIdx - 1), usrWidth);
+                idx2 = getIdxFromYMapCoord(uint16_t(midIdxX + 1), uint16_t(tgtRowIdx - 1), usrWidth);
+                cout << " DN";
 
-            } else if ( dy && !dx) {
-               /* Right triangle */
-              frame1Vertex  = vertices.at(getIdxFromCoord(uint16_t(frameIdxX + 1), uint16_t(frameIdxY    ), usrWidth));
-              frame2Vertex  = vertices.at(getIdxFromCoord(uint16_t(frameIdxX + 1), uint16_t(frameIdxY + 1), usrWidth));
+              } else if (!dy &&  dx) {
+                 /* Left triangle */
+                idx1 = getIdxFromYMapCoord(uint16_t(midIdxX    ), uint16_t(tgtRowIdx - 1), usrWidth);
+                idx2 = getIdxFromYMapCoord(uint16_t(midIdxX    ), uint16_t(tgtRowIdx + 1), usrWidth);
+                cout << " LE";
 
-            } else if ( dy &&  dx) {
-               /* Up triangle */
-              frame1Vertex  = vertices.at(getIdxFromCoord(uint16_t(frameIdxX    ), uint16_t(frameIdxY + 1), usrWidth));
-              frame2Vertex  = vertices.at(getIdxFromCoord(uint16_t(frameIdxX + 1), uint16_t(frameIdxY + 1), usrWidth));
+              } else if ( dy && !dx) {
+                 /* Right triangle */
+                idx1 = getIdxFromYMapCoord(uint16_t(midIdxX + 1), uint16_t(tgtRowIdx - 1), usrWidth);
+                idx2 = getIdxFromYMapCoord(uint16_t(midIdxX + 1), uint16_t(tgtRowIdx + 1), usrWidth);
+                cout << " RI";
+
+              } else if ( dy &&  dx) {
+                 /* Up triangle */
+                idx1 = getIdxFromYMapCoord(uint16_t(midIdxX    ), uint16_t(tgtRowIdx + 1), usrWidth);
+                idx2 = getIdxFromYMapCoord(uint16_t(midIdxX + 1), uint16_t(tgtRowIdx + 1), usrWidth);
+                cout << " UP";
+              }
+              frame1Vertex  = yMap.at(idx1);
+              frame2Vertex  = yMap.at(idx2);
+
+              cout << ", dy=" << dy << " dx=" << dx << ": mid=" << midVertex.x << "/" << midVertex.z <<" (idx=" << midIdx << "), frame1=" << frame1Vertex.x << "/" << frame1Vertex.z << " (idx=" << idx1 << "), frame2=" << frame2Vertex.x << "/" << frame2Vertex.z << "(idx=" << idx2 << ")";
+
+              /* Push triangle to vertices */
+              vertices.push_back(midVertex);
+              vertices.push_back(frame1Vertex);
+              vertices.push_back(frame2Vertex);
+
+              /* Push triangle to uvs */
+              {
+                const glm::vec2    midUv(   midVertex.x * uvMulX + uvAddX,    midVertex.z * uvMulZ + uvAddZ);
+                const glm::vec2 frame1Uv(frame1Vertex.x * uvMulX + uvAddX, frame1Vertex.z * uvMulZ + uvAddZ);
+                const glm::vec2 frame2Uv(frame2Vertex.x * uvMulX + uvAddX, frame2Vertex.z * uvMulZ + uvAddZ);
+
+                uvs.push_back(midUv);
+                uvs.push_back(frame1Uv);
+                uvs.push_back(frame2Uv);
+              }
+
+              /* Bases of the triangle */
+              const glm::vec3 delta1 = frame1Vertex - midVertex;
+              const glm::vec3 delta2 = frame2Vertex - midVertex;
+
+              thsNorm = glm::vec3(delta2) * glm::vec3(delta1);
+              if (thsNorm.y < 0) {
+                /* Make right handed */
+                thsNorm = -thsNorm;
+              }
+              cout << "\t taken." << endl << flush;
+
+            } else {
+              thsNorm = vec3(0, 1, 0);  // Up
+              cout << "\t dropped." << endl << flush;
             }
 
-            /* Bases of the triangle */
-            const glm::vec3 delta1 = frame1Vertex - midVertex;
-            const glm::vec3 delta2 = frame2Vertex - midVertex;
-
-            thsNorm = glm::vec3(delta2) * glm::vec3(delta1);
-            if (thsNorm.y < 0) {
-              /* Make right handed */
-              thsNorm = -thsNorm;
-            }
-
-            thsNormAdd += thsNorm;
-            cout << "\t taken." << endl << flush;
-
-          } else {
-            cout << "\t dropped." << endl << flush;
+            /* Push triangle to normals */
+            normals.push_back(thsNorm);
           }
         }
       }
-
-      /* Have a mean normal vector */
-      thsNormAdd = normalize(thsNormAdd);
-      normals.push_back(thsNormAdd);
     }
   }
 
@@ -336,7 +420,6 @@ void ogl::setupHeightMesh(const std::vector< std::vector< int > > heightVecVec, 
   cout << "normals:" << endl;
   printVecGlmVec3(normals);
   cout << endl;
-
 
 
 #if 0
@@ -502,7 +585,7 @@ void ogl::enterLoop(void)
 }
 
 
-uint32_t ogl::getIdxFromCoord(uint16_t posX, uint16_t posY, uint16_t colms)
+uint32_t ogl::getIdxFromYMapCoord(uint16_t posX, uint16_t posY, uint16_t colms)
 {
   if (0 == (posY % 2)) {
     /* Given vertices line */
@@ -510,7 +593,7 @@ uint32_t ogl::getIdxFromCoord(uint16_t posX, uint16_t posY, uint16_t colms)
 
   } else {
     /* Bi-linear line */
-    return uint32_t((posY >> 1) * ((colms << 1) - 1) + (colms - 1) + posX);
+    return uint32_t((posY >> 1) * ((colms << 1) - 1) + colms + posX);
   }
 }
 

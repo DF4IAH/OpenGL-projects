@@ -39,11 +39,11 @@ int main(int argc, char* argv[])
     heightRowVec.push_back(4); heightRowVec.push_back(5); heightRowVec.push_back(2);
     heightVecVec.push_back(heightRowVec);
 
-    ogl.setupHeightMesh(heightVecVec, 1.0f);
+    ogl.setupHeightMesh(heightVecVec, 1.0f,
+                        1.0f, 0.0f,
+                        1.0f, 0.0f);
 
-    asm volatile("nop");
-
-#if 0
+#if 1
     for (int rowIdx = 0; rowIdx < rowCnt; rowIdx++) {
       cout << endl << "Row " << rowIdx << ":\t";
       for (int colIdx = 0; colIdx < colCnt; colIdx++) {
@@ -52,6 +52,10 @@ int main(int argc, char* argv[])
     }
     cout << endl << endl;
 #endif
+
+    //ogl.doIndex();
+    //ogl.loadIntoVBO();
+    //ogl.enterLoop();
   }
 
   return 0;
