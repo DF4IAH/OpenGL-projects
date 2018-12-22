@@ -2,6 +2,7 @@
 #define OGL_HPP_
 
 #include <string>
+#include <vector>
 
 #include <glm/glm.hpp>
 #include <GL/glew.h>
@@ -18,8 +19,6 @@ public:
   void doIndex(void);
   void loadIntoVBO(void);
   void enterLoop(void);
-
-  uint32_t getIdxFromYMapCoord(uint16_t posX, uint16_t posY, uint16_t colms);
 
   void printVecGlmVec2(std::vector<glm::vec2> v);
   void printVecGlmVec3(std::vector<glm::vec3> v);

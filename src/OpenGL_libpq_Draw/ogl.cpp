@@ -442,9 +442,9 @@ void ogl::loadIntoVBO(void)
   glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
   glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(indexed_uvs.size() * sizeof(glm::vec2)), &indexed_uvs[0], GL_STATIC_DRAW);
 
-  //glGenBuffers(1, &normalbuffer);
-  //glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-  //glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(indexed_normals.size() * sizeof(glm::vec3)), &indexed_normals[0], GL_STATIC_DRAW);
+  glGenBuffers(1, &normalbuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+  glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(indexed_normals.size() * sizeof(glm::vec3)), &indexed_normals[0], GL_STATIC_DRAW);
 
   // Generate a buffer for the indices as well
   glGenBuffers(1, &elementbuffer);
@@ -526,7 +526,6 @@ void ogl::enterLoop(void)
       nullptr                           // array buffer offset
     );
 
-#if 0
     // 3rd attribute buffer : normals
     glEnableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
@@ -538,7 +537,6 @@ void ogl::enterLoop(void)
       0,                                // stride
       nullptr                           // array buffer offset
     );
-#endif
 
     // Index buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
@@ -553,26 +551,13 @@ void ogl::enterLoop(void)
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
-    //glDisableVertexAttribArray(2);
+    glDisableVertexAttribArray(2);
 
     // Swap buffers
     glfwSwapBuffers(window);
     glfwPollEvents();
 
   } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);  // Check if the ESC key was pressed or the window was closed
-}
-
-
-uint32_t ogl::getIdxFromYMapCoord(uint16_t posX, uint16_t posY, uint16_t colms)
-{
-  if (0 == (posY % 2)) {
-    /* Given vertices line */
-    return uint32_t((posY >> 1) * ((colms << 1) - 1) + posX);
-
-  } else {
-    /* Bi-linear line */
-    return uint32_t((posY >> 1) * ((colms << 1) - 1) + colms + posX);
-  }
 }
 
 
