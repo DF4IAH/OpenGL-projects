@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
                                 0.0f,     uvScale,  uvOfsY,
                                 0.0f,     0.0f,     0.0f);
     ogl.setupHeightMesh(heightVecVec, heightScale, matUv);
-
+    ogl.doNormMean();
     ogl.doIndex();
     ogl.loadIntoVBO();
     ogl.enterLoop();
