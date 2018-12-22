@@ -14,7 +14,7 @@ public:
 
   ~ogl();
 
-  void setupHeightMesh(const std::vector< std::vector< int > > heightVecVec, float scaleHeight, GLfloat uvMulX = 1.f, GLfloat uvAddX = 0.f, GLfloat uvMulZ = 1.f, GLfloat uvAddZ = 0.f);
+  void setupHeightMesh(const std::vector< std::vector< GLfloat > > heightVecVec, float scaleHeight, const glm::mat3 matUv);
   void doIndex(void);
   void loadIntoVBO(void);
   void enterLoop(void);

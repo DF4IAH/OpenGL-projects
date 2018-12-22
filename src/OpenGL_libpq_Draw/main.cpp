@@ -1,11 +1,17 @@
 #include <iostream>
 #include <string>
 #include <vector>
+using namespace std;
+
+// Include GLM
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
+using namespace glm;
 
 #include "ogl.h"
 #include "pq.h"
-
-using namespace std;
 
 
 int main(int argc, char* argv[])
@@ -24,38 +30,41 @@ int main(int argc, char* argv[])
 
     cout << "main: Got " << rowCnt << " rows with " << colCnt << " columns." << endl;
 
-    std::vector< std::vector< int > > heightVecVec;
-    std::vector< int > heightRowVec;
+    std::vector< std::vector< GLfloat > > heightVecVec;
+    std::vector< GLfloat > heightRowVec;
 
     heightRowVec.clear();
-    heightRowVec.push_back(1); heightRowVec.push_back(2); heightRowVec.push_back(3);
+    heightRowVec.push_back(0.1f); heightRowVec.push_back(0.2f); heightRowVec.push_back(0.3f); heightRowVec.push_back(0.2f); heightRowVec.push_back(0.1f);
     heightVecVec.push_back(heightRowVec);
 
     heightRowVec.clear();
-    heightRowVec.push_back(3); heightRowVec.push_back(7); heightRowVec.push_back(1);
+    heightRowVec.push_back(0.3f); heightRowVec.push_back(0.7f); heightRowVec.push_back(0.4f); heightRowVec.push_back(0.5f); heightRowVec.push_back(0.2f);
     heightVecVec.push_back(heightRowVec);
 
     heightRowVec.clear();
-    heightRowVec.push_back(4); heightRowVec.push_back(5); heightRowVec.push_back(2);
+    heightRowVec.push_back(0.4f); heightRowVec.push_back(0.5f); heightRowVec.push_back(1.0f); heightRowVec.push_back(0.3f); heightRowVec.push_back(0.2f);
     heightVecVec.push_back(heightRowVec);
 
-    ogl.setupHeightMesh(heightVecVec, 1.0f,
-                        1.0f, 0.0f,
-                        1.0f, 0.0f);
+    heightRowVec.clear();
+    heightRowVec.push_back(0.5f); heightRowVec.push_back(0.3f); heightRowVec.push_back(0.4f); heightRowVec.push_back(0.2f); heightRowVec.push_back(0.1f);
+    heightVecVec.push_back(heightRowVec);
 
-#if 1
-    for (int rowIdx = 0; rowIdx < rowCnt; rowIdx++) {
-      cout << endl << "Row " << rowIdx << ":\t";
-      for (int colIdx = 0; colIdx < colCnt; colIdx++) {
-        cout << res.at(static_cast<uint32_t>(rowIdx)).at(static_cast<uint32_t>(colIdx)) << "\t";
-      }
-    }
-    cout << endl << endl;
-#endif
+    heightRowVec.clear();
+    heightRowVec.push_back(0.2f); heightRowVec.push_back(0.4f); heightRowVec.push_back(0.1f); heightRowVec.push_back(0.1f); heightRowVec.push_back(0.0f);
+    heightVecVec.push_back(heightRowVec);
 
-    //ogl.doIndex();
-    //ogl.loadIntoVBO();
-    //ogl.enterLoop();
+    const float heightScale = 1.0f;
+    const float uvScale     = 1.0f;
+    const float uvOfsX      = 0.0f;
+    const float uvOfsY      = 0.0f;
+    glm::mat3 matUv = glm::mat3(uvScale,  0.0f,     uvOfsX,
+                                0.0f,     uvScale,  uvOfsY,
+                                0.0f,     0.0f,     0.0f);
+    ogl.setupHeightMesh(heightVecVec, heightScale, matUv);
+
+    ogl.doIndex();
+    ogl.loadIntoVBO();
+    ogl.enterLoop();
   }
 
   return 0;
