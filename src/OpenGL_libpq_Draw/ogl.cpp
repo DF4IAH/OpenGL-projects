@@ -39,6 +39,11 @@ typedef struct MapFirst{
   }
 } MapFirst_t;
 
+typedef struct MapSec {
+  glm::vec3   n;
+  uint16_t    cnt;
+} MapSec_t;
+
 
 
 ogl::ogl(int widthPara, int heightPara)
@@ -428,51 +433,40 @@ void ogl::setupHeightMesh(const std::vector< std::vector< GLfloat > > heightVecV
 
 void ogl::doNormMean(void)
 {
-  typedef struct sec {
-    glm::vec3   v;
-    uint16_t    cnt;
-  } sec_t;
-
   const uint16_t vecCnt = uint16_t(normals.size());
-  std::map< MapFirst_t, sec_t > sumMap;
+  std::map< MapFirst_t, MapSec_t > sumMap;
 
   /* Read in and sum up */
   for (uint16_t vecIdx = 0; vecIdx < vecCnt; ++vecIdx) {
-    glm::vec3 iv = vertices.at(vecIdx);
-    glm::vec3 in = normals.at(vecIdx);
     MapFirst_t mf;
-    mf.v = iv;
-    std::map< MapFirst_t, sec_t >::iterator it = sumMap.find(mf);
+    mf.v = vertices.at(vecIdx);
+    std::map< MapFirst_t, MapSec_t >::iterator it = sumMap.find(mf);
     if (it != sumMap.end()) {
-      sec_t sec = it->second;
-      sec.v = sec.v + in;
-      sec.cnt++;
-      it->second = sec;
+      it->second.n += normals.at(vecIdx);
+      it->second.cnt++;
+      //cout << "cnt=" << it->second.cnt << ", Sum_norm=" << it->second.n.x << "/" << it->second.n.y << "/" << it->second.n.z << endl << flush;
 
     } else {
-      MapFirst_t mf;
-      mf.v = iv;
-      sec_t sec;
-      sec.v = iv;
-      sec.cnt = 1;
-      sumMap.insert(std::make_pair(mf, sec));
+      MapSec_t ms;
+      ms.n   = normals.at(vecIdx);
+      ms.cnt = 1;
+      sumMap.insert(std::make_pair(mf, ms));
     }
   }
 
-  /* Update all normal entries */
-  std::vector< glm::vec3 > normals2;
+  /* Update all normal entries into shadow vector */
+  std::vector< glm::vec3 > normalsShd;
   for (uint16_t idx = 0; idx < vecCnt; ++idx) {
-    const glm::vec3 v3 = vertices.at(idx);
     MapFirst_t mf;
-    mf.v = v3;
-    const std::map<MapFirst_t, sec_t>::iterator it = sumMap.find(mf);
-    const sec_t n3s = it->second;
-    glm::vec3 n3SumNormalized = glm::normalize(n3s.v);
-    normals2.push_back(n3SumNormalized);
+    mf.v = vertices.at(idx);
+    const std::map< MapFirst_t, MapSec_t >::iterator it = sumMap.find(mf);
+
+    /* Normalize each summed up normal vectors */
+    normalsShd.push_back(glm::normalize(it->second.n));
   }
 
-  /* Copy them back */
-  normals = std::vector<glm::vec3>(normals2);
+  /* Copy shadow vector of normals back */
+  normals = std::vector<glm::vec3>(normalsShd);
 }
 
 void ogl::doIndex(void)
