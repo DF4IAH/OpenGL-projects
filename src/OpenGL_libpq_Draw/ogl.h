@@ -32,7 +32,7 @@ private:
   int                           width           = widthDflt;
   int                           height          = heightDflt;
 
-  std::string                   UVmapName       = std::string("uvmap.DDS");
+  std::string                   UVmapName       = std::string("Mipmaps/uvmap_metering.DDS");
   GLuint                        VertexArrayID   = 0;
   GLuint                        ProgramID       = 0;
   GLint                         MatrixID        = 0;
