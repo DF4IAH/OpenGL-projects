@@ -12,6 +12,9 @@ using namespace std;
 #include <glm/gtx/transform.hpp>
 using namespace glm;
 
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
 #include "ogl.h"
 #include "pq.h"
 
@@ -33,27 +36,41 @@ int main(int argc, char* argv[])
   pq  db;
   std::vector< std::vector< GLfloat > > heightVecVec;
   std::vector< GLfloat > heightRowVec;
+  std::vector<double> timeVec;
 
   (void)argc;
   (void)argv;
 
+  const double  latN =  50.0;
+  const double  latS =  46.9;
+  const double  lonW =   6.4;
+  const double  lonE =   9.5;
+  const GLfloat MagnifyHeight = 10.0f;
+
+  timeVec.push_back(glfwGetTime());
+
   if (db.connect("gis")) {
     cout << "main: DB gis ok." << endl;
-    vvUI64_t res = db.execSyncVVUI64("SELECT height[topo_lon_grid(8) : topo_lon_grid(9)]  "
-                                     "FROM TOPO  "
-                                     "WHERE id = 1  AND  "
-                                     "row BETWEEN topo_lat_grid(50) AND topo_lat_grid(49);");
-    const int rowCnt = db.getRowCnt();
-    const int colCnt = db.getColCnt();
+    char buf[256] = "";
+    sprintf(buf,
+            "SELECT height[topo_lon_grid(%lf) : topo_lon_grid(%lf)]  " \
+            "FROM TOPO  " \
+            "WHERE id = 1  AND  " \
+            "row BETWEEN topo_lat_grid(%lf) AND topo_lat_grid(%lf);",
+            lonW, lonE, latN, latS);
+    vvUI64_t res = db.execSyncVVUI64(buf);
+    const uint64_t rowCnt = uint64_t(db.getRowCnt());
+    const uint64_t colCnt = uint64_t(db.getColCnt());
+    timeVec.push_back(glfwGetTime());
 
     cout << "main: Got " << rowCnt << " rows with " << colCnt << " columns." << endl;
 
     std::vector< std::vector< uint64_t > >::iterator it = res.begin();
-    for (int rowIdx = 0; rowIdx < rowCnt; ++rowIdx) {
+    for (uint64_t rowIdx = 0; rowIdx < rowCnt; ++rowIdx) {
       heightRowVec.clear();
       std::vector<uint64_t> row = *(it++);
 
-      for (int colIdx = 0; colIdx < colCnt; ++colIdx) {
+      for (uint64_t colIdx = 0; colIdx < colCnt; ++colIdx) {
         uint64_t  len = row.at(std::vector<int64_t>::size_type(colIdx << 1));
         void*     ptr = reinterpret_cast<void*>(row.at(std::vector<int64_t>::size_type((colIdx << 1) + 1)));
 
@@ -94,11 +111,13 @@ int main(int argc, char* argv[])
           }
         }
 
+        /* Allocated by the class pq */
         free(ptr);
       }
       /* Each row vector goes there */
       heightVecVec.push_back(heightRowVec);
     }
+    timeVec.push_back(glfwGetTime());
 
 #if 0
     heightRowVec.clear();
@@ -122,17 +141,35 @@ int main(int argc, char* argv[])
     heightVecVec.push_back(heightRowVec);
 #endif
 
-    const float heightScale = 1.0f / 1000.0f;
-    const float uvScale     = 1.0f;
-    const float uvOfsX      = 0.0f;
-    const float uvOfsY      = 0.0f;
+    const GLfloat heightScale = MagnifyHeight * GLfloat(2.0 / (fabs(latN - latS) * 60.0 * 1852.0));
+    const GLfloat uvScale     = 1.0f;
+    const GLfloat uvOfsX      = 0.0f;
+    const GLfloat uvOfsY      = 0.0f;
     glm::mat3 matUv = glm::mat3(uvScale,  0.0f,     uvOfsX,
                                 0.0f,     uvScale,  uvOfsY,
                                 0.0f,     0.0f,     0.0f);
     ogl.setupHeightMesh(heightVecVec, heightScale, matUv);
+    timeVec.push_back(glfwGetTime());
+
     ogl.doNormMean();
+    timeVec.push_back(glfwGetTime());
+
     ogl.doIndex();
+    timeVec.push_back(glfwGetTime());
+
     ogl.loadIntoVBO();
+    timeVec.push_back(glfwGetTime());
+
+    cout << "Timings" << endl;
+    cout << "after\tDB execute, \t\tafter DB collect, \t\tafter mesh, \tafter mean normals, \tafter index, \tafter load VBO" << endl << "start";
+    double startTime = timeVec.at(0);
+    for (std::vector<double>::iterator it = timeVec.begin() + 1; it != timeVec.end(); ++it) {
+      double diffTime = *it - startTime;
+      double deltaTime = *it - *(it - 1);
+      cout << ", \t(" << diffTime << ") " << deltaTime;
+    }
+    cout << endl << flush;
+
     ogl.enterLoop();
   }
 

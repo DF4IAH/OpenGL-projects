@@ -35,13 +35,13 @@ typedef struct MapFirst{
   glm::vec3 v;
 
   bool operator < (const MapFirst that) const {
-    return memcmp((void*)this, (void*)&that, sizeof(MapFirst)) > 0;
+    return memcmp(reinterpret_cast<const void*>(this), reinterpret_cast<const void*>(&that), sizeof(MapFirst)) > 0;
   }
 } MapFirst_t;
 
 typedef struct MapSec {
   glm::vec3   n;
-  uint16_t    cnt;
+  uint32_t    cnt;
 } MapSec_t;
 
 
@@ -198,6 +198,7 @@ ogl::~ogl()
 
 void ogl::setupHeightMesh(const std::vector< std::vector< GLfloat > > heightVecVec, float scaleHeight, const glm::mat3 matUv)
 {
+  const GLfloat NormVecToCoordOfs = 0.001f;
   std::vector<glm::vec3> yMap;
   std::vector<glm::vec3> biMap;
 
@@ -207,71 +208,62 @@ void ogl::setupHeightMesh(const std::vector< std::vector< GLfloat > > heightVecV
     return;
   }
 
-  const uint16_t yMapHeight = uint16_t(heightVecVec.size());
-  const uint16_t yMapWidth  = uint16_t(heightVecVec.at(0).size());
+  const uint32_t yMapHeight = uint32_t(heightVecVec.size());
+  const uint32_t yMapWidth  = uint32_t(heightVecVec.at(0).size());
 
   /* yMap */
-  for (uint16_t yMapRowIdx = 0; yMapRowIdx < yMapHeight; ++yMapRowIdx) {
-    for (uint16_t yMapColIdx = 0; yMapColIdx < yMapWidth; ++yMapColIdx) {
+  for (uint32_t yMapRowIdx = 0; yMapRowIdx < yMapHeight; ++yMapRowIdx) {
+    for (uint32_t yMapColIdx = 0; yMapColIdx < yMapWidth; ++yMapColIdx) {
       const GLfloat yMapAlt = heightVecVec.at(yMapRowIdx).at(yMapColIdx);
 
       const GLfloat usrMapY = yMapAlt * scaleHeight;
-      const GLfloat usrMapX = +(yMapColIdx / GLfloat(yMapWidth  - 1)) * 2.f - 1.f;
-      const GLfloat usrMapZ = -(yMapRowIdx / GLfloat(yMapHeight - 1)) * 2.f + 1.f;
+      const GLfloat usrMapX = +(yMapColIdx / GLfloat(yMapWidth  - 1)) * (2.0f - NormVecToCoordOfs) - 1.f + NormVecToCoordOfs;
+      const GLfloat usrMapZ = +(yMapRowIdx / GLfloat(yMapHeight - 1)) * (2.0f - NormVecToCoordOfs) - 1.f + NormVecToCoordOfs;
 
       const glm::vec3 thsVertex(usrMapX, usrMapY, usrMapZ);
       yMap.push_back(thsVertex);
     }
   }
-  #if 0
-  cout << "yMap:" << endl;
-  printVecGlmVec3(yMap);
-  cout << endl << flush;
-  #endif
 
   /* biMap */
-  for (uint16_t biMapRowIdx = 0; biMapRowIdx < yMapHeight - 1; ++biMapRowIdx) {
-    for (uint16_t biMapColIdx = 0; biMapColIdx < yMapWidth - 1; ++biMapColIdx) {
-      float biMapAlt = 0.0f;
+  for (uint32_t biMapRowIdx = 0; biMapRowIdx < yMapHeight - 1; ++biMapRowIdx) {
+    for (uint32_t biMapColIdx = 0; biMapColIdx < yMapWidth - 1; ++biMapColIdx) {
+      GLfloat biMapAlt = 0.0f;
 
-      for (int variant = 0; variant < 4; ++variant) {
+      for (char variant = 0; variant < 4; ++variant) {
           switch (variant) {
-            case 0:  // BOTTOM-LEFT
-              biMapAlt += yMap.at(biMapRowIdx * yMapWidth + biMapColIdx).y;
-              break;
+          case 0:  // BOTTOM-LEFT
+            biMapAlt += yMap.at(biMapRowIdx * yMapWidth + biMapColIdx).y;
+            break;
 
-            case 1:  // BOTTOM-RIGHT
-              biMapAlt += yMap.at(biMapRowIdx * yMapWidth + biMapColIdx + 1).y;
-              break;
+          case 1:  // BOTTOM-RIGHT
+            biMapAlt += yMap.at(biMapRowIdx * yMapWidth + biMapColIdx + 1).y;
+            break;
 
-            case 2:  // TOP-LEFT
-              biMapAlt += yMap.at((biMapRowIdx + 1) * yMapWidth + biMapColIdx).y;
-              break;
+          case 2:  // TOP-LEFT
+            biMapAlt += yMap.at((biMapRowIdx + 1) * yMapWidth + biMapColIdx).y;
+            break;
 
-            case 3:  // TOP-RIGHT
-            default:
-              biMapAlt += yMap.at((biMapRowIdx + 1) * yMapWidth + biMapColIdx + 1).y;
-              break;
-            }
+          case 3:  // TOP-RIGHT
+          default:
+            biMapAlt += yMap.at((biMapRowIdx + 1) * yMapWidth + biMapColIdx + 1).y;
+            break;
+          }
       }
 
+      /* Bilinear altitude */
       const GLfloat biMapY = biMapAlt / 4.0f;
-      const GLfloat biMapX = +((GLfloat(biMapColIdx) + 0.5f) / GLfloat(yMapWidth  - 1)) * 2.f - 1.f;
-      const GLfloat biMapZ = -((GLfloat(biMapRowIdx) + 0.5f) / GLfloat(yMapHeight - 1)) * 2.f + 1.f;
+      const GLfloat biMapX = +((GLfloat(biMapColIdx) + 0.5f) / GLfloat(yMapWidth  - 1)) * (2.0f - NormVecToCoordOfs) - 1.f + NormVecToCoordOfs;
+      const GLfloat biMapZ = +((GLfloat(biMapRowIdx) + 0.5f) / GLfloat(yMapHeight - 1)) * (2.0f - NormVecToCoordOfs) - 1.f + NormVecToCoordOfs;
 
       const glm::vec3 thsBiVec(biMapX, biMapY, biMapZ);
       biMap.push_back(thsBiVec);
     }
   }
-  #if 0
-  cout << "biMap:" << endl;
-  printVecGlmVec3(biMap);
-  cout << endl << flush;
-  #endif
 
   /* For each yMap vertix */
-  for (uint16_t yMapRowIdx = 1; yMapRowIdx < yMapHeight - 1; ++yMapRowIdx) {
-    for (uint16_t yMapColIdx = 1; yMapColIdx < yMapWidth - 1; ++yMapColIdx) {
+  for (uint32_t yMapRowIdx = 1; yMapRowIdx < yMapHeight - 1; ++yMapRowIdx) {
+    for (uint32_t yMapColIdx = 1; yMapColIdx < yMapWidth - 1; ++yMapColIdx) {
       const glm::vec3 midVertix =  yMap.at( yMapRowIdx      *  yMapWidth      + yMapColIdx    );
       const glm::vec3 blVertix  = biMap.at((yMapRowIdx - 1) * (yMapWidth - 1) + yMapColIdx - 1);
       const glm::vec3 brVertix  = biMap.at((yMapRowIdx - 1) * (yMapWidth - 1) + yMapColIdx + 0);
@@ -300,32 +292,27 @@ void ogl::setupHeightMesh(const std::vector< std::vector< GLfloat > > heightVecV
         vertices.push_back(trVertix);
         vertices.push_back(tlVertix);
       }
-      #if 0
-      cout << "vertices:" << endl;
-      printVecGlmVec3(vertices);
-      cout << endl << flush;
-      #endif
 
       /* Mesh triangle UVs */
       {
-        glm::vec3 midUVunscaled(midVertix.x, midVertix.z, 0.0f);
-        glm::vec3  blUVunscaled( blVertix.x,  blVertix.z, 0.0f);
-        glm::vec3  brUVunscaled( brVertix.x,  brVertix.z, 0.0f);
-        glm::vec3  tlUVunscaled( tlVertix.x,  tlVertix.z, 0.0f);
-        glm::vec3  trUVunscaled( trVertix.x,  trVertix.z, 0.0f);
+        const glm::vec3 midUVunscaled(midVertix.x, midVertix.z, 0.0f);
+        const glm::vec3  blUVunscaled( blVertix.x,  blVertix.z, 0.0f);
+        const glm::vec3  brUVunscaled( brVertix.x,  brVertix.z, 0.0f);
+        const glm::vec3  tlUVunscaled( tlVertix.x,  tlVertix.z, 0.0f);
+        const glm::vec3  trUVunscaled( trVertix.x,  trVertix.z, 0.0f);
 
         /* Transform UVs (scale, rotate and shift) */
-        midUVunscaled = 0.5f + ((matUv * midUVunscaled) / 2.0f);
-        blUVunscaled  = 0.5f + ((matUv *  blUVunscaled) / 2.0f);
-        brUVunscaled  = 0.5f + ((matUv *  brUVunscaled) / 2.0f);
-        tlUVunscaled  = 0.5f + ((matUv *  tlUVunscaled) / 2.0f);
-        trUVunscaled  = 0.5f + ((matUv *  trUVunscaled) / 2.0f);
+        const glm::vec3 midUVscaled = 0.5f + ((matUv * midUVunscaled) / (2.0f + NormVecToCoordOfs));
+        const glm::vec3 blUVscaled  = 0.5f + ((matUv *  blUVunscaled) / (2.0f + NormVecToCoordOfs));
+        const glm::vec3 brUVscaled  = 0.5f + ((matUv *  brUVunscaled) / (2.0f + NormVecToCoordOfs));
+        const glm::vec3 tlUVscaled  = 0.5f + ((matUv *  tlUVunscaled) / (2.0f + NormVecToCoordOfs));
+        const glm::vec3 trUVscaled  = 0.5f + ((matUv *  trUVunscaled) / (2.0f + NormVecToCoordOfs));
 
-        const glm::vec2 midUV(midUVunscaled.x, midUVunscaled.y);
-        const glm::vec2  blUV( blUVunscaled.x,  blUVunscaled.y);
-        const glm::vec2  brUV( brUVunscaled.x,  brUVunscaled.y);
-        const glm::vec2  tlUV( tlUVunscaled.x,  tlUVunscaled.y);
-        const glm::vec2  trUV( trUVunscaled.x,  trUVunscaled.y);
+        const glm::vec2 midUV(midUVscaled.x, midUVscaled.y);
+        const glm::vec2  blUV( blUVscaled.x,  blUVscaled.y);
+        const glm::vec2  brUV( brUVscaled.x,  brUVscaled.y);
+        const glm::vec2  tlUV( tlUVscaled.x,  tlUVscaled.y);
+        const glm::vec2  trUV( trUVscaled.x,  trUVscaled.y);
 
         /* Bottom triangle */
         uvs.push_back(midUV);
@@ -347,14 +334,10 @@ void ogl::setupHeightMesh(const std::vector< std::vector< GLfloat > > heightVecV
         uvs.push_back(trUV);
         uvs.push_back(tlUV);
       }
-      #if 0
-      cout << "uvs:" << endl;
-      printVecGlmVec2(uvs);
-      cout << endl << flush;
-      #endif
 
       /* Mesh triangle normals */
       {
+#if 1
         const glm::vec3 bDelta1 = blVertix - midVertix;
         const glm::vec3 bDelta2 = brVertix - midVertix;
         const glm::vec3 lDelta1 = tlVertix - midVertix;
@@ -364,41 +347,25 @@ void ogl::setupHeightMesh(const std::vector< std::vector< GLfloat > > heightVecV
         const glm::vec3 tDelta1 = trVertix - midVertix;
         const glm::vec3 tDelta2 = tlVertix - midVertix;
 
-        #if 0
-        vector<glm::vec3> test;
-        cout << "Bottom" << endl;
-        test.push_back(midVertix);
-        test.push_back(blVertix);
-        test.push_back(brVertix);
-        printVecGlmVec3(test);
+        glm::vec3 bNorm = glm::normalize(glm::cross(bDelta2, bDelta1));
+        glm::vec3 lNorm = glm::normalize(glm::cross(lDelta2, lDelta1));
+        glm::vec3 rNorm = glm::normalize(glm::cross(rDelta2, rDelta1));
+        glm::vec3 tNorm = glm::normalize(glm::cross(tDelta2, tDelta1));
 
-        cout << endl << "Delta(bottom), delta2 x delta1" << endl;
-        test.clear();
-        test.push_back(bDelta1);
-        test.push_back(bDelta2);
-        test.push_back(glm::cross(bDelta1, bDelta2));
-        printVecGlmVec3(test);
-        #endif
-
-        const glm::vec3 bNorm = glm::normalize(glm::cross(bDelta1, bDelta2));
-        const glm::vec3 lNorm = glm::normalize(glm::cross(lDelta1, lDelta2));
-        const glm::vec3 rNorm = glm::normalize(glm::cross(rDelta1, rDelta2));
-        const glm::vec3 tNorm = glm::normalize(glm::cross(tDelta1, tDelta2));
-
-        #if 0
+# if 0
         if (bNorm.y < 0.0f) {
-          cerr << "STOP" << endl << flush;
+          bNorm = -bNorm;
         }
         if (lNorm.y < 0.0f) {
-          cerr << "STOP" << endl << flush;
+          lNorm = -lNorm;
         }
         if (rNorm.y < 0.0f) {
-          cerr << "STOP" << endl << flush;
+          rNorm = -rNorm;
         }
         if (tNorm.y < 0.0f) {
-          cerr << "STOP" << endl << flush;
+          tNorm = -tNorm;
         }
-        #endif
+# endif
 
         /* Bottom triangle */
         normals.push_back(bNorm);
@@ -419,32 +386,35 @@ void ogl::setupHeightMesh(const std::vector< std::vector< GLfloat > > heightVecV
         normals.push_back(tNorm);
         normals.push_back(tNorm);
         normals.push_back(tNorm);
+#else
+        const glm::vec3 up(0.0f, 1.0f, 0.0f);
 
+        for (int idx = 0; idx < 12; ++idx) {
+          normals.push_back(up);
+        }
+#endif
       }
-      #if 0
-      cout << "normals:" << endl;
-      printVecGlmVec3(normals);
-      cout << endl << flush;
-      asm volatile( "nop" );
-      #endif
     }
   }
 }
 
 void ogl::doNormMean(void)
 {
-  const uint16_t vecCnt = uint16_t(normals.size());
+  const uint32_t vecCnt = uint32_t(normals.size());
   std::map< MapFirst_t, MapSec_t > sumMap;
 
   /* Read in and sum up */
-  for (uint16_t vecIdx = 0; vecIdx < vecCnt; ++vecIdx) {
+  for (uint32_t vecIdx = 0; vecIdx < vecCnt; ++vecIdx) {
     MapFirst_t mf;
     mf.v = vertices.at(vecIdx);
     std::map< MapFirst_t, MapSec_t >::iterator it = sumMap.find(mf);
     if (it != sumMap.end()) {
       it->second.n += normals.at(vecIdx);
       it->second.cnt++;
-      //cout << "cnt=" << it->second.cnt << ", Sum_norm=" << it->second.n.x << "/" << it->second.n.y << "/" << it->second.n.z << endl << flush;
+
+#if 0
+      cout << "cnt=" << it->second.cnt << ", Sum_norm=" << it->second.n.x << "/" << it->second.n.y << "/" << it->second.n.z << endl << flush;
+#endif
 
     } else {
       MapSec_t ms;
@@ -456,7 +426,7 @@ void ogl::doNormMean(void)
 
   /* Update all normal entries into shadow vector */
   std::vector< glm::vec3 > normalsShd;
-  for (uint16_t idx = 0; idx < vecCnt; ++idx) {
+  for (uint32_t idx = 0; idx < vecCnt; ++idx) {
     MapFirst_t mf;
     mf.v = vertices.at(idx);
     const std::map< MapFirst_t, MapSec_t >::iterator it = sumMap.find(mf);
@@ -476,7 +446,11 @@ void ogl::doIndex(void)
     return;
   }
 
-  indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
+  indexVBO(vertices, uvs, normals,
+           indices, indexed_vertices, indexed_uvs, indexed_normals);
+  // OK : 170k indices, 28.6k indexed_*
+  // OK : 385k indices, 64.5k indexed_*
+  // BAD: 411k indices, 68.8k indexed_*
 }
 
 void ogl::loadIntoVBO(void)
@@ -516,6 +490,7 @@ void ogl::enterLoop(void)
   lastTime = glfwGetTime();
 
   do {
+#if 0
     // Measure speed
     double currentTime = glfwGetTime();
     nbFrames++;
@@ -526,6 +501,7 @@ void ogl::enterLoop(void)
       nbFrames = 0;
       lastTime += 1.0;
     }
+#endif
 
     // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

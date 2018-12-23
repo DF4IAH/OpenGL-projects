@@ -159,8 +159,8 @@ vvUI64_t pq::execSyncVVUI64(const string params)
 
   clrRes();
 
-  pqRes = PQexecParams(pqCon, params.c_str(), 0,
-                       nullptr, nullptr, nullptr, nullptr,
+  pqRes = PQexecParams(pqCon, params.c_str(),
+                       0, nullptr, nullptr, nullptr, nullptr,
                        1);
   PQsetSingleRowMode(pqCon);
 
