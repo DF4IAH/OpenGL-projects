@@ -5,6 +5,7 @@
 using namespace std;
 
 typedef vector< vector< string > > vvs_t;
+typedef vector< vector< uint64_t > > vvUI64_t;
 
 
 class pq {
@@ -24,7 +25,8 @@ public:
   void clrRes(void);
   void clrCon(void);
 
-  vvs_t execSync(const string params);
+  vvs_t execSyncVVS(const string params);
+  vvUI64_t execSyncVVUI64(const string params);
 
 
 private:

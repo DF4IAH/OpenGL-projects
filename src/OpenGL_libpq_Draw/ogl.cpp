@@ -140,7 +140,7 @@ ogl::ogl()
   /* Load the texture */
   //UVmapName     = string("Mipmaps/uvmap_color.DDS");
   //UVmapName     = string("Mipmaps/uvmap_dice.DDS");
-  UVmapName     = string("Mipmaps/World_Satview_2048x2048_DXT1.DDS");
+  //UVmapName     = string("Mipmaps/World_Satview_2048x2048_DXT1.DDS");
   Texture       = loadDDS(UVmapName.c_str());
 
   /* Get a handle for our "earthTextureSampler" uniform */
