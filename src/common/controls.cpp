@@ -21,7 +21,7 @@ glm::mat4 getProjectionMatrix(){
 
 
 // Initial position : on +Z
-glm::vec3 position    = glm::vec3( 0.0f, 0.2f, 1.3f );
+glm::vec3 position    = glm::vec3( 0.0f, 2.2f, 1.3f );
 // Initial horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // Initial vertical angle : none
@@ -29,7 +29,7 @@ float verticalAngle   = 0.0f;
 // Initial Field of View
 float initialFoV      = 45.0f;
 
-float speed           = 0.125f; // 0.125 units / second
+float speed           = 0.25f; // 0.25 units / second
 float mouseSpeed      = 0.005f;
 
 
@@ -72,27 +72,27 @@ void computeMatricesFromInputs(){
 		cos(horizontalAngle - 3.14f/2.0f)
 	);
 
-	// Up vector
+        // Up vector
   glm::vec3 up = glm::cross( right, direction );
 
 	// Move forward
 	if (glfwGetKey( window, GLFW_KEY_UP ) == GLFW_PRESS){
     position += direction * deltaTime * speed;
-	}
-	// Move backward
-	if (glfwGetKey( window, GLFW_KEY_DOWN ) == GLFW_PRESS){
+        }
+        // Move backward
+        if (glfwGetKey( window, GLFW_KEY_DOWN ) == GLFW_PRESS){
     position -= direction * deltaTime * speed;
-	}
-	// Strafe right
-	if (glfwGetKey( window, GLFW_KEY_RIGHT ) == GLFW_PRESS){
+        }
+        // Strafe right
+        if (glfwGetKey( window, GLFW_KEY_RIGHT ) == GLFW_PRESS){
     position += right * deltaTime * speed;
-	}
-	// Strafe left
-	if (glfwGetKey( window, GLFW_KEY_LEFT ) == GLFW_PRESS){
+        }
+        // Strafe left
+        if (glfwGetKey( window, GLFW_KEY_LEFT ) == GLFW_PRESS){
     position -= right * deltaTime * speed;
-	}
+        }
 
-	float FoV = initialFoV;// - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
+        float FoV = initialFoV;// - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
 
 	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
 	ProjectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, 0.1f, 100.0f);

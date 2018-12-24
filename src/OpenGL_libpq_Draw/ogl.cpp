@@ -158,7 +158,7 @@ ogl::ogl()
   /* Load the texture */
 //UVmapName     = string("Mipmaps/uvmap_color.DDS");
 //UVmapName     = string("Mipmaps/uvmap_dice.DDS");
-  UVmapName     = string("Mipmaps/World_Satview_2048x2048_DXT1.DDS");
+  UVmapName     = string("Mipmaps/World_Satview_2048x2048_DXT1.DDS");   // TopLeft: 62.120752, -7.804211 / TopRight: 61.237249, 23.834532 / BotLeft: 32.025640, -7.638962 / BotRight: 31.097567, 22.378249  --> Delta: 30, 30
   Texture       = loadDDS(UVmapName.c_str());
 
   /* Get a handle for our "earthTextureSampler" uniform */
@@ -180,13 +180,14 @@ ogl::ogl()
     */
 
   /* Pre-load initial data set */
-  pq_getAltData(49.5, 8.5, 10.0);  // delta: 5.0 <--> uvMult: 0.028
+  pq_getAltData(49.5, 8.5, 10.0);
   timeVec.push_back(glfwGetTime());
 
   /* Build up altitude mesh */
-  // TopLeft: 62.120752, -7.804211 / TopRight: 61.237249, 23.834532
-  // BotLeft: 32.025640, -7.638962 / BotRight: 31.097567, 22.378249  --> Delta: 30, 30
-  pq_transferDataDB2GL(10.0f, 10.0f/30.0f, 10.0f/30.0f, +0.03f, -0.08f);  // 10.0    0.3    0.3    +0.03   -0.08
+
+  pq_transferDataDB2GL(10.0f, 10.0f/30.0f, 10.0f/30.0f, +0.030f, -0.080f);
+  // 49.5 / 8.5 / 10.0 // 10.0 / 10.0/30.0 / 10.0/30.0 / +0.030 / -0.080
+  // 49.5 / 8.5 /  4.0 // 10.0 /  4.0/30.0 /  4.0/30.0 / +0.035 / -0.083
   timeVec.push_back(glfwGetTime());
 
   doNormMean();
