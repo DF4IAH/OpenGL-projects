@@ -32,20 +32,25 @@ typedef union u {
 
 int main(int argc, char* argv[])
 {
-  ogl ogl;
-  pq  db;
-  std::vector< std::vector< GLfloat > > heightVecVec;
-  std::vector< GLfloat > heightRowVec;
-  std::vector<double> timeVec;
-
-  (void)argc;
-  (void)argv;
-
   const double  latN =  50.0;
   const double  latS =  47.0;
   const double  lonW =   6.5;
   const double  lonE =   9.5;
+  const GLfloat uvScaleX      = 0.028f;
+  const GLfloat uvScaleY      = 0.028f;
+  const GLfloat uvOfsX        = 0.000f;
+  const GLfloat uvOfsY        = 0.000f;
   const GLfloat MagnifyHeight = 10.0f;
+
+  std::vector< std::vector< GLfloat > > heightVecVec;
+  std::vector< GLfloat > heightRowVec;
+  std::vector<double> timeVec;
+
+  ogl ogl;
+  pq  db;
+
+  (void)argc;
+  (void)argv;
 
   timeVec.push_back(glfwGetTime());
 
@@ -142,12 +147,9 @@ int main(int argc, char* argv[])
 #endif
 
     const GLfloat heightScale = MagnifyHeight * GLfloat(2.0 / (fabs(latN - latS) * 60.0 * 1852.0));
-    const GLfloat uvScale     = 1.0f;
-    const GLfloat uvOfsX      = 0.0f;
-    const GLfloat uvOfsY      = 0.0f;
-    glm::mat3 matUv = glm::mat3(uvScale,  0.0f,     uvOfsX,
-                                0.0f,     uvScale,  uvOfsY,
-                                0.0f,     0.0f,     0.0f);
+    glm::mat3 matUv = glm::mat3(uvScaleX,  0.0f,      uvOfsX,
+                                0.0f,      uvScaleY,  uvOfsY,
+                                0.0f,      0.0f,      0.0f);
     ogl.setupHeightMesh(heightVecVec, heightScale, matUv);
     timeVec.push_back(glfwGetTime());
 
