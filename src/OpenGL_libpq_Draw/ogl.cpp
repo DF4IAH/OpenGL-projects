@@ -438,9 +438,6 @@ void ogl::doIndex(void)
 
   indexVBO(vertices, uvs, normals,
            indices, indexed_vertices, indexed_uvs, indexed_normals);
-  // OK : 170k indices, 28.6k indexed_*
-  // OK : 385k indices, 64.5k indexed_*
-  // BAD: 411k indices, 68.8k indexed_*
 }
 
 void ogl::loadIntoVBO(void)
@@ -466,7 +463,7 @@ void ogl::loadIntoVBO(void)
   // Generate a buffer for the indices as well
   glGenBuffers(1, &elementbuffer);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(indices.size() * sizeof(unsigned short)), &indices[0] , GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(indices.size() * sizeof(unsigned int)), &indices[0] , GL_STATIC_DRAW);
 }
 
 void ogl::enterLoop(void)
@@ -564,7 +561,7 @@ void ogl::enterLoop(void)
     glDrawElements(
       GL_TRIANGLES,                     // mode
       GLsizei(indices.size()),          // count
-      GL_UNSIGNED_SHORT,                // type
+      GL_UNSIGNED_INT,                  // type
       nullptr                           // array buffer offset
     );
 

@@ -4,6 +4,7 @@
 using namespace std;
 
 #include <string.h>
+#include <math.h>
 
 // Include GLM
 #define GLM_ENABLE_EXPERIMENTAL
@@ -32,10 +33,9 @@ typedef union u {
 
 int main(int argc, char* argv[])
 {
-  const double  latN =  50.0;
-  const double  latS =  47.0;
-  const double  lonW =   6.5;
-  const double  lonE =   9.5;
+  const double  latMid        = 49.0;
+  const double  lonMid        =  8.0;
+  const double  latDelta      =  4.0;
   const GLfloat uvScaleX      = 0.028f;
   const GLfloat uvScaleY      = 0.028f;
   const GLfloat uvOfsX        = 0.000f;
@@ -51,6 +51,12 @@ int main(int argc, char* argv[])
 
   (void)argc;
   (void)argv;
+
+  const double  lonDelta      = latDelta / sin(M_PI * latMid / 180.0);
+  const double  lonW          = lonMid - (lonDelta / 2.0);
+  const double  lonE          = lonMid + (lonDelta / 2.0);
+  const double  latN          = latMid + (latDelta / 2.0);
+  const double  latS          = latMid - (latDelta / 2.0);
 
   timeVec.push_back(glfwGetTime());
 

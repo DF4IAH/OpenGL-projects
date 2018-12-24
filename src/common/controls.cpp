@@ -33,7 +33,6 @@ float speed           = 0.125f; // 0.125 units / second
 float mouseSpeed      = 0.005f;
 
 
-
 void computeMatricesFromInputs(){
   static char inited = 0;
 
