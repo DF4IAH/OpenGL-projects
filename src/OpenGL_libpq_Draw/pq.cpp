@@ -146,7 +146,11 @@ vvUI64_t pq::execSyncVVUI64(const string params)
 {
   vvUI64_t vvUI64;
 
-  /* Sanity check */
+  /* Sanity checks */
+  if (!pqCon) {
+    return vvUI64;
+  }
+
   switch (PQstatus(pqCon))
   {
   case CONNECTION_OK:

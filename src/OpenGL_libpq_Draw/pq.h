@@ -1,3 +1,6 @@
+#ifndef PQ_H_
+#define PQ_H_
+
 #include <vector>
 #include <string>
 #include <libpq-fe.h>
@@ -37,3 +40,5 @@ private:
   int         pqColCnt  = 0;
 
 };
+
+#endif

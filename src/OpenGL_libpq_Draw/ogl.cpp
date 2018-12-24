@@ -31,6 +31,13 @@ using namespace glm;
 using namespace std;
 
 
+typedef union u {
+  int32_t   i32;
+
+  float     f;
+} u_t;
+
+
 typedef struct MapFirst{
   glm::vec3 v;
 
@@ -57,6 +64,15 @@ ogl::ogl(int widthPara, int heightPara)
 
 ogl::ogl()
 {
+  /* Initial timestamp */
+  timeVec.push_back(glfwGetTime());
+
+  /* Connect to the PostgreSQL DBMS */
+  pq_open();
+  if (!db_rdy) {
+    return;
+  }
+
   cout << "OpenGL CON" << endl;
 
   // Initialise GLFW
@@ -140,16 +156,19 @@ ogl::ogl()
   LightID       = glGetUniformLocation(ProgramID, "LightPosition_worldspace");                  // Get a handle for our "LightPosition_worldspace" uniform
 
   /* Load the texture */
-  //UVmapName     = string("Mipmaps/uvmap_color.DDS");
-  //UVmapName     = string("Mipmaps/uvmap_dice.DDS");
+//UVmapName     = string("Mipmaps/uvmap_color.DDS");
+//UVmapName     = string("Mipmaps/uvmap_dice.DDS");
   UVmapName     = string("Mipmaps/World_Satview_2048x2048_DXT1.DDS");
   Texture       = loadDDS(UVmapName.c_str());
 
   /* Get a handle for our "earthTextureSampler" uniform */
   TextureID     = glGetUniformLocation(ProgramID, "earthTextureSampler");
 
+  timeVec.push_back(glfwGetTime());
+
   /* Construction done */
-  ready = true;
+  gl_rdy = true;
+
 
   /**
     * Further use these methods
@@ -159,12 +178,47 @@ ogl::ogl()
     * loadIntoVBO()
     * enterLoop()
     */
+
+  /* Pre-load initial data set */
+  pq_getAltData(49.5, 8.5, 10.0);  // delta: 5.0 <--> uvMult: 0.028
+  timeVec.push_back(glfwGetTime());
+
+  /* Build up altitude mesh */
+  // TopLeft: 62.120752, -7.804211 / TopRight: 61.237249, 23.834532
+  // BotLeft: 32.025640, -7.638962 / BotRight: 31.097567, 22.378249  --> Delta: 30, 30
+  pq_transferDataDB2GL(10.0f, 10.0f/30.0f, 10.0f/30.0f, +0.03f, -0.08f);  // 10.0    0.3    0.3    +0.03   -0.08
+  timeVec.push_back(glfwGetTime());
+
+  doNormMean();
+  timeVec.push_back(glfwGetTime());
+
+  doIndex();
+  timeVec.push_back(glfwGetTime());
+
+  loadIntoVBO();
+  timeVec.push_back(glfwGetTime());
+
+  cout << "Timings" << endl;
+  cout << "after\tafter GL init, \tafter DB, \t\t\tafter mesh, \tafter mean normals, \tafter index, \t\tafter load VBO" << endl << "start";
+  double startTime = timeVec.at(0);
+  for (std::vector<double>::iterator it = timeVec.begin() + 1; it != timeVec.end(); ++it) {
+    double diffTime = *it - startTime;
+    double deltaTime = *it - *(it - 1);
+    cout << ", \t(" << diffTime << ") " << deltaTime;
+  }
+  cout << endl << flush;
+  timeVec.clear();
+
+  enterLoop();
 }
 
 ogl::~ogl()
 {
   /* Drop flag */
-  ready = false;
+  gl_rdy = false;
+
+  /* Shutdown DB connection */
+  pq_close();
 
   /* Cleanup VBO and shader */
   if (vertexbuffer) {
@@ -198,27 +252,27 @@ ogl::~ogl()
 }
 
 
-void ogl::setupHeightMesh(const std::vector< std::vector< GLfloat > > heightVecVec, float scaleHeight, const glm::mat3 matUv)
+void ogl::setupAltMesh(float scaleAlt, const glm::mat3 matUv)
 {
   const GLfloat NormVecToCoordOfs = 0.001f;
   std::vector<glm::vec3> yMap;
   std::vector<glm::vec3> biMap;
 
   /* Sanity checks */
-  if (!ready || heightVecVec.empty()) {
+  if (!gl_rdy || db_altVecVec.empty()) {
     cerr << "ERROR ogl: construction failed before, setupMesh() aborted." << endl;
     return;
   }
 
-  const uint32_t yMapHeight = uint32_t(heightVecVec.size());
-  const uint32_t yMapWidth  = uint32_t(heightVecVec.at(0).size());
+  const uint32_t yMapHeight = uint32_t(db_altVecVec.size());
+  const uint32_t yMapWidth  = uint32_t(db_altVecVec.at(0).size());
 
   /* yMap */
   for (uint32_t yMapRowIdx = 0; yMapRowIdx < yMapHeight; ++yMapRowIdx) {
     for (uint32_t yMapColIdx = 0; yMapColIdx < yMapWidth; ++yMapColIdx) {
-      const GLfloat yMapAlt = heightVecVec.at(yMapRowIdx).at(yMapColIdx);
+      const GLfloat yMapAlt = db_altVecVec.at(yMapRowIdx).at(yMapColIdx);
 
-      const GLfloat usrMapY = yMapAlt * scaleHeight;
+      const GLfloat usrMapY = yMapAlt * scaleAlt;
       const GLfloat usrMapX = +(yMapColIdx / GLfloat(yMapWidth  - 1)) * (2.0f - NormVecToCoordOfs) - 1.f + NormVecToCoordOfs;
       const GLfloat usrMapZ = +(yMapRowIdx / GLfloat(yMapHeight - 1)) * (2.0f - NormVecToCoordOfs) - 1.f + NormVecToCoordOfs;
 
@@ -297,24 +351,24 @@ void ogl::setupHeightMesh(const std::vector< std::vector< GLfloat > > heightVecV
 
       /* Mesh triangle UVs */
       {
-        const glm::vec3 midUVunscaled(midVertix.x, midVertix.z, 0.0f);
+        const glm::vec3 midUVunscaled(midVertix.x, midVertix.z, 0.0f);  // Offset to be added explicit
         const glm::vec3  blUVunscaled( blVertix.x,  blVertix.z, 0.0f);
         const glm::vec3  brUVunscaled( brVertix.x,  brVertix.z, 0.0f);
         const glm::vec3  tlUVunscaled( tlVertix.x,  tlVertix.z, 0.0f);
         const glm::vec3  trUVunscaled( trVertix.x,  trVertix.z, 0.0f);
 
         /* Transform UVs (scale, rotate and shift) */
-        const glm::vec3 midUVscaled = 0.5f + ((matUv * midUVunscaled) / (2.0f + NormVecToCoordOfs));
-        const glm::vec3 blUVscaled  = 0.5f + ((matUv *  blUVunscaled) / (2.0f + NormVecToCoordOfs));
-        const glm::vec3 brUVscaled  = 0.5f + ((matUv *  brUVunscaled) / (2.0f + NormVecToCoordOfs));
-        const glm::vec3 tlUVscaled  = 0.5f + ((matUv *  tlUVunscaled) / (2.0f + NormVecToCoordOfs));
-        const glm::vec3 trUVscaled  = 0.5f + ((matUv *  trUVunscaled) / (2.0f + NormVecToCoordOfs));
+        const glm::vec3 midUVscaled = (matUv * midUVunscaled) / (2.0f + NormVecToCoordOfs);
+        const glm::vec3 blUVscaled  = (matUv *  blUVunscaled) / (2.0f + NormVecToCoordOfs);
+        const glm::vec3 brUVscaled  = (matUv *  brUVunscaled) / (2.0f + NormVecToCoordOfs);
+        const glm::vec3 tlUVscaled  = (matUv *  tlUVunscaled) / (2.0f + NormVecToCoordOfs);
+        const glm::vec3 trUVscaled  = (matUv *  trUVunscaled) / (2.0f + NormVecToCoordOfs);
 
-        const glm::vec2 midUV(midUVscaled.x, midUVscaled.y);
-        const glm::vec2  blUV( blUVscaled.x,  blUVscaled.y);
-        const glm::vec2  brUV( brUVscaled.x,  brUVscaled.y);
-        const glm::vec2  tlUV( tlUVscaled.x,  tlUVscaled.y);
-        const glm::vec2  trUV( trUVscaled.x,  trUVscaled.y);
+        const glm::vec2 midUV(midUVscaled.x + matUv[0][2] + 0.5f, midUVscaled.y + matUv[1][2] + 0.5f);
+        const glm::vec2  blUV( blUVscaled.x + matUv[0][2] + 0.5f,  blUVscaled.y + matUv[1][2] + 0.5f);
+        const glm::vec2  brUV( brUVscaled.x + matUv[0][2] + 0.5f,  brUVscaled.y + matUv[1][2] + 0.5f);
+        const glm::vec2  tlUV( tlUVscaled.x + matUv[0][2] + 0.5f,  tlUVscaled.y + matUv[1][2] + 0.5f);
+        const glm::vec2  trUV( trUVscaled.x + matUv[0][2] + 0.5f,  trUVscaled.y + matUv[1][2] + 0.5f);
 
         /* Bottom triangle */
         uvs.push_back(midUV);
@@ -431,7 +485,7 @@ void ogl::doNormMean(void)
 
 void ogl::doIndex(void)
 {
-  if (!ready) {
+  if (!gl_rdy) {
     cerr << "ERROR ogl: construction failed before, doIndex() aborted." << endl;
     return;
   }
@@ -442,7 +496,7 @@ void ogl::doIndex(void)
 
 void ogl::loadIntoVBO(void)
 {
-  if (!ready) {
+  if (!gl_rdy) {
     cerr << "ERROR ogl: construction failed before, loadIntoVBO() aborted." << endl;
     return;
   }
@@ -468,7 +522,7 @@ void ogl::loadIntoVBO(void)
 
 void ogl::enterLoop(void)
 {
-  if (!ready) {
+  if (!gl_rdy) {
     cerr << "ERROR ogl: construction failed before, enterLoop() aborted." << endl;
     return;
   }
@@ -591,4 +645,162 @@ void ogl::printVecGlmVec3(const std::vector<glm::vec3> v)
   for (std::vector<glm::vec3>::const_iterator it = v.begin(); it != v.end(); ++it) {
     cout << "at " << idx++ << "\t" << it->x << "/" << it->y << "/" << it->z << endl;
   }
+}
+
+
+void ogl::pq_open(void)
+{
+  db = new pq();
+  if (!db) {
+    return;
+  }
+
+  if (db->connect("gis")) {
+    db_rdy = true;
+    cout << "main: DB gis ok." << endl;
+  }
+}
+
+void ogl::pq_close(void)
+{
+  if (db) {
+
+      delete db;
+      db = nullptr;
+    }
+}
+
+void ogl::pq_getAltData(double latMid, double lonMid, double latDelta)
+{
+  std::vector< std::vector< GLfloat > > heightVecVec;
+  std::vector< GLfloat >                heightRowVec;
+  vvUI64_t                              res;
+
+  /* Take over parameters */
+  db_latMid   = latMid;
+  db_lonMid   = lonMid;
+  db_latDelta = latDelta;
+
+  db_lonDelta = db_latDelta / sin(M_PI * db_latMid / 180.0);
+  db_lonW     = db_lonMid - (db_lonDelta / 2.0);
+  db_lonE     = db_lonMid + (db_lonDelta / 2.0);
+  db_latN     = db_latMid + (db_latDelta / 2.0);
+  db_latS     = db_latMid - (db_latDelta / 2.0);
+
+
+  /* Read altitude data */
+  {
+    char buf[256] = "";
+    db_altVecVec.clear();
+
+    sprintf(buf,
+            "SELECT height[topo_lon_grid(%lf) : topo_lon_grid(%lf)]  " \
+            "FROM TOPO  " \
+            "WHERE id = 1  AND  " \
+            "row BETWEEN topo_lat_grid(%lf) AND topo_lat_grid(%lf);",
+            db_lonW, db_lonE, db_latN, db_latS);
+
+    /* Execute - remarks: do not forget to free the allocated space taken by this method */
+    res = db->execSyncVVUI64(buf);
+
+    db_rowCnt = uint32_t(db->getRowCnt());
+    db_colCnt = uint32_t(db->getColCnt());
+  }
+
+  /* Parse data into GLfloat VecVec */
+  {
+    std::vector<std::vector<uint64_t> >::iterator it = res.begin();
+
+    for (uint32_t rowIdx = 0; rowIdx < db_rowCnt; ++rowIdx) {
+      std::vector< GLfloat > heightRowVec;
+      std::vector<uint64_t> row = *(it++);
+
+      for (uint32_t colIdx = 0; colIdx < db_colCnt; ++colIdx) {
+        uint32_t  len = uint32_t(row.at(std::vector<uint64_t>::size_type(colIdx << 1)));
+        void*     ptr = reinterpret_cast<void*>(row.at(std::vector<uint64_t>::size_type((colIdx << 1) + 1)));
+
+        u_t  u = { 0 };
+        uint8_t* u8ptrL = reinterpret_cast<uint8_t*>(&u);
+        uint8_t* u8ptrR = reinterpret_cast<uint8_t*>(ptr);
+
+        GLfloat f = 0.0f;
+
+        if (len <= 4) {
+          /* Form data */
+          for (uint32_t idx = 0; idx < len; ++idx) {
+            *(u8ptrL + idx) = *(u8ptrR + (len - idx - 1));
+          }
+          f = GLfloat(u.i32);
+
+          /* Each column entry goes there */
+          heightRowVec.push_back(f);
+
+        } else {
+          /* Array of int */
+          int cnt = int(len);
+          uint64_t ofs = 0;
+          while (cnt >= int(sizeof(int))) {
+            /* Form data */
+            for (uint32_t idx = 0; idx < sizeof(int); ++idx) {
+              *(u8ptrL + idx) = *(u8ptrR + (ofs + (sizeof(int) - idx - 1)));
+            }
+            f = GLfloat(u.i32);
+
+            cnt -= sizeof(int);
+            ofs += sizeof(int);
+
+            if ((ofs >= 6 * sizeof(int)) && (ofs % 8)) {
+              /* Each column entry goes there */
+              heightRowVec.push_back(f);
+            }
+          }
+        }
+
+        /* Allocated by the class pq */
+        free(ptr);
+      }
+      /* Each row vector goes there */
+      db_altVecVec.push_back(heightRowVec);
+    }
+  }
+}
+
+void ogl::pq_transferDataDB2GL(GLfloat magAlt, GLfloat uvScaleX, GLfloat uvScaleY, GLfloat uvOfsX, GLfloat uvOfsY)
+{
+#if 0
+  heightRowVec.clear();
+  heightRowVec.push_back(0.1f); heightRowVec.push_back(0.2f); heightRowVec.push_back(0.3f); heightRowVec.push_back(0.2f); heightRowVec.push_back(0.1f);
+  heightVecVec.push_back(heightRowVec);
+
+  heightRowVec.clear();
+  heightRowVec.push_back(0.3f); heightRowVec.push_back(0.4f); heightRowVec.push_back(0.4f); heightRowVec.push_back(0.5f); heightRowVec.push_back(0.2f);
+  heightVecVec.push_back(heightRowVec);
+
+  heightRowVec.clear();
+  heightRowVec.push_back(0.4f); heightRowVec.push_back(0.5f); heightRowVec.push_back(0.6f); heightRowVec.push_back(0.3f); heightRowVec.push_back(0.2f);
+  heightVecVec.push_back(heightRowVec);
+
+  heightRowVec.clear();
+  heightRowVec.push_back(0.5f); heightRowVec.push_back(0.3f); heightRowVec.push_back(0.4f); heightRowVec.push_back(0.2f); heightRowVec.push_back(0.1f);
+  heightVecVec.push_back(heightRowVec);
+
+  heightRowVec.clear();
+  heightRowVec.push_back(0.2f); heightRowVec.push_back(0.4f); heightRowVec.push_back(0.1f); heightRowVec.push_back(0.1f); heightRowVec.push_back(0.0f);
+  heightVecVec.push_back(heightRowVec);
+#endif
+
+  /* Take over parameters */
+  db_MagAlt   = magAlt;
+  db_UvScaleX = uvScaleX;
+  db_UvScaleY = uvScaleY;
+  db_UvOfsX   = uvOfsX;
+  db_UvOfsY   = uvOfsY;
+
+  const GLfloat altScale = db_MagAlt * GLfloat(2.0 / (fabs(db_latN - db_latS) * 60.0 * 1852.0));
+
+  glm::mat3 matUv = glm::mat3(db_UvScaleX,  0.0f,         db_UvOfsX,
+                              0.0f,         db_UvScaleY,  db_UvOfsY,
+                              0.0f,         0.0f,         0.0f);
+
+  setupAltMesh(altScale, matUv);
 }
