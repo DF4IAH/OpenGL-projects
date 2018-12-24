@@ -110,9 +110,11 @@ ogl::ogl()
   /* Accept fragment if it closer to the camera than the former one */
   glDepthFunc(GL_LESS);
 
+#if 0
   /* Cull triangles which normal is not towards the camera */
-  //glEnable(GL_CULL_FACE);
-
+  glEnable(GL_CULL_FACE);
+  glCullFace(GL_FRONT);
+#endif
 
   /* VertexID */
   glGenVertexArrays(1, &VertexArrayID);
@@ -140,7 +142,7 @@ ogl::ogl()
   /* Load the texture */
   //UVmapName     = string("Mipmaps/uvmap_color.DDS");
   //UVmapName     = string("Mipmaps/uvmap_dice.DDS");
-  //UVmapName     = string("Mipmaps/World_Satview_2048x2048_DXT1.DDS");
+  UVmapName     = string("Mipmaps/World_Satview_2048x2048_DXT1.DDS");
   Texture       = loadDDS(UVmapName.c_str());
 
   /* Get a handle for our "earthTextureSampler" uniform */
@@ -337,7 +339,6 @@ void ogl::setupHeightMesh(const std::vector< std::vector< GLfloat > > heightVecV
 
       /* Mesh triangle normals */
       {
-#if 1
         const glm::vec3 bDelta1 = blVertix - midVertix;
         const glm::vec3 bDelta2 = brVertix - midVertix;
         const glm::vec3 lDelta1 = tlVertix - midVertix;
@@ -386,13 +387,6 @@ void ogl::setupHeightMesh(const std::vector< std::vector< GLfloat > > heightVecV
         normals.push_back(tNorm);
         normals.push_back(tNorm);
         normals.push_back(tNorm);
-#else
-        const glm::vec3 up(0.0f, 1.0f, 0.0f);
-
-        for (int idx = 0; idx < 12; ++idx) {
-          normals.push_back(up);
-        }
-#endif
       }
     }
   }
@@ -411,10 +405,6 @@ void ogl::doNormMean(void)
     if (it != sumMap.end()) {
       it->second.n += normals.at(vecIdx);
       it->second.cnt++;
-
-#if 0
-      cout << "cnt=" << it->second.cnt << ", Sum_norm=" << it->second.n.x << "/" << it->second.n.y << "/" << it->second.n.z << endl << flush;
-#endif
 
     } else {
       MapSec_t ms;

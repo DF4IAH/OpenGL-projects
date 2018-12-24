@@ -42,8 +42,8 @@ int main(int argc, char* argv[])
   (void)argv;
 
   const double  latN =  50.0;
-  const double  latS =  46.9;
-  const double  lonW =   6.4;
+  const double  latS =  47.0;
+  const double  lonW =   6.5;
   const double  lonE =   9.5;
   const GLfloat MagnifyHeight = 10.0f;
 
