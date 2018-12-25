@@ -256,7 +256,7 @@ ogl::~ogl()
 }
 
 
-void ogl::setupAltMesh(float scaleAlt, const glm::mat3 matUv)
+void ogl::setupAltMesh(GLfloat scaleAlt, const glm::mat3 matUv, GLfloat latDelta, GLfloat lonDelta)
 {
   const GLfloat NormVecToCoordOfs = 0.001f;
   std::vector<glm::vec3> yMap;
@@ -274,13 +274,21 @@ void ogl::setupAltMesh(float scaleAlt, const glm::mat3 matUv)
   /* yMap */
   for (uint32_t yMapRowIdx = 0; yMapRowIdx < yMapHeight; ++yMapRowIdx) {
     for (uint32_t yMapColIdx = 0; yMapColIdx < yMapWidth; ++yMapColIdx) {
-      const GLfloat yMapAlt = db_altVecVec.at(yMapRowIdx).at(yMapColIdx);
+      const double  radius  = 6371000.785;  // Mean value in meters
+      const double  theta   = M_PI / 180.0 * fabs(((double(yMapRowIdx) / double(yMapHeight)) - 0.5) * double((latDelta) / 2.0f));
+      const double  phi     = M_PI / 180.0 * fabs(((double(yMapColIdx) / double(yMapWidth))  - 0.5) * double((lonDelta) / 2.0f));
 
-      const GLfloat usrMapY = yMapAlt * scaleAlt;
+      const GLfloat yMapAlt = db_altVecVec.at(yMapRowIdx).at(yMapColIdx);
+      const GLfloat usrMapY = GLfloat(double(scaleAlt) * (double(yMapAlt) - radius * (1.0 - (cos(theta) * cos(phi)))));
+#if 0
+      const GLfloat usrMapX = /* GLfloat(cos(phi)   * (*/ +(yMapColIdx / double(yMapWidth  - 1)) * double((2.0f - NormVecToCoordOfs) - 1.0f + NormVecToCoordOfs); //));
+      const GLfloat usrMapZ = /* GLfloat(cos(theta) * (*/ +(yMapRowIdx / double(yMapHeight - 1)) * double((2.0f - NormVecToCoordOfs) - 1.0f + NormVecToCoordOfs); //));
+#else
       const GLfloat usrMapX = +(yMapColIdx / GLfloat(yMapWidth  - 1)) * (2.0f - NormVecToCoordOfs) - 1.f + NormVecToCoordOfs;
       const GLfloat usrMapZ = +(yMapRowIdx / GLfloat(yMapHeight - 1)) * (2.0f - NormVecToCoordOfs) - 1.f + NormVecToCoordOfs;
-
+#endif
       const glm::vec3 thsVertex(usrMapX, usrMapY, usrMapZ);
+
       yMap.push_back(thsVertex);
     }
   }
@@ -800,11 +808,13 @@ void ogl::pq_transferDataDB2GL(GLfloat magAlt, GLfloat uvScaleX, GLfloat uvScale
   db_UvOfsX   = uvOfsX;
   db_UvOfsY   = uvOfsY;
 
-  const GLfloat altScale = db_MagAlt * GLfloat(2.0 / (fabs(db_latN - db_latS) * 60.0 * 1852.0));
+  const GLfloat latDelta = GLfloat(fabs(db_latN - db_latS));
+  const GLfloat lonDelta = GLfloat(fabs(db_lonW - db_lonE));
+  const GLfloat altScale = db_MagAlt * (2.0f / (latDelta * 60.0f * 1852.0f));
 
   glm::mat3 matUv = glm::mat3(db_UvScaleX,  0.0f,         db_UvOfsX,
                               0.0f,         db_UvScaleY,  db_UvOfsY,
                               0.0f,         0.0f,         0.0f);
 
-  setupAltMesh(altScale, matUv);
+  setupAltMesh(altScale, matUv, latDelta, lonDelta);
 }

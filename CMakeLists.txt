@@ -12,6 +12,9 @@ if(WIN32)
 
 elseif(APPLE)
    message(STATUS "Compilation for a MAC using port utilities.")
+
+  #set(GCC "g++-mp-8")
+
   #find_package(PostgreSQL REQUIRED)
    set(PostgreSQL_INCLUDE_DIR "/opt/local/include/postgresql10")
    file(GLOB_RECURSE PostgreSQL_LIBRARIES "/opt/local/lib/postgresql10/*.dylib")
@@ -25,6 +28,8 @@ elseif(APPLE)
    set(GLFW_LIBRARIES     "/opt/local/lib/libglfw.dylib")
    message(STATUS "Found OPENGL_INCLUDE_DIR=${OPENGL_INCLUDE_DIR}")
    include_directories(${OPENGL_INCLUDE_DIR})
+
+  include_directories("/opt/local/include/libomp")
 
 elseif(UNIX)
    message(STATUS "Compilation for an UNIX like system.")

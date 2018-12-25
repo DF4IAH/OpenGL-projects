@@ -27,7 +27,7 @@ private:
   void pq_getAltData(double latMid, double lonMid, double latDelta);
   void pq_transferDataDB2GL(GLfloat magAlt, GLfloat uvScaleX, GLfloat uvScaleY, GLfloat uvOfsX, GLfloat uvOfsY);
 
-  void setupAltMesh(float scaleAlt, const glm::mat3 matUv);
+  void setupAltMesh(GLfloat scaleAlt, const glm::mat3 matUv, GLfloat latDelta, GLfloat lonDelta);
   void doNormMean(void);
   void doIndex(void);
   void loadIntoVBO(void);
