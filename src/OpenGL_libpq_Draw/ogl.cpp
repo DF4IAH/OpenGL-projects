@@ -6,6 +6,8 @@
 #include <vector>
 #include <iostream>
 
+#include <omp.h>
+
 // Include GLEW. Always include it before gl.h and glfw3.h, since it's a bit magic.
 #include <GL/glew.h>
 
@@ -180,12 +182,13 @@ ogl::ogl()
     */
 
   /* Pre-load initial data set */
-  pq_getAltData(49.5, 8.5, 10.0);
+  const double latDelta = 10.0;
+  pq_getAltData(49.5, 8.5, latDelta);
   timeVec.push_back(glfwGetTime());
 
   /* Build up altitude mesh */
 
-  pq_transferDataDB2GL(10.0f, 10.0f/30.0f, 10.0f/30.0f, +0.030f, -0.080f);
+  pq_transferDataDB2GL(10.0f, GLfloat(latDelta/30.0), GLfloat(latDelta/30.0), +0.035f, -0.083f);
   // 49.5 / 8.5 / 10.0 // 10.0 / 10.0/30.0 / 10.0/30.0 / +0.030 / -0.080
   // 49.5 / 8.5 /  4.0 // 10.0 /  4.0/30.0 /  4.0/30.0 / +0.035 / -0.083
   timeVec.push_back(glfwGetTime());

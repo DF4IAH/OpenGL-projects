@@ -29,6 +29,8 @@ elseif(APPLE)
 elseif(UNIX)
    message(STATUS "Compilation for an UNIX like system.")
 
+   set(__OMP__ 1)
+
    find_package(PostgreSQL REQUIRED)
    include_directories(${PostgreSQL_INCLUDE_DIR})
 
@@ -49,7 +51,7 @@ elseif(UNIX)
 endif()
 
 
-if(__OPENNN_MPI__)
+if(__MPI__)
    find_package(MPI)
    if(MPI_FOUND)
         message("Using MPI")
@@ -61,7 +63,7 @@ if(__OPENNN_MPI__)
     endif()
 endif()
 
-if(__OPENNN_OMP__)
+if(__OMP__)
     message("Using OpenMP")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")#${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")#${OpenMP_CXX_FLAGS}")
