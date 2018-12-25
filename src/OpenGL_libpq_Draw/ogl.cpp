@@ -258,7 +258,7 @@ ogl::~ogl()
 
 void ogl::setupAltMesh(GLfloat scaleAlt, const glm::mat3 matUv, GLfloat latDelta, GLfloat lonDelta)
 {
-  const GLfloat NormVecToCoordOfs = 0.001f;
+  const GLfloat NormVecToCoordOfs = 0.0001f;
   std::vector<glm::vec3> yMap;
   std::vector<glm::vec3> biMap;
 
@@ -280,13 +280,8 @@ void ogl::setupAltMesh(GLfloat scaleAlt, const glm::mat3 matUv, GLfloat latDelta
 
       const GLfloat yMapAlt = db_altVecVec.at(yMapRowIdx).at(yMapColIdx);
       const GLfloat usrMapY = GLfloat(double(scaleAlt) * (double(yMapAlt) - radius * (1.0 - (cos(theta) * cos(phi)))));
-#if 0
-      const GLfloat usrMapX = /* GLfloat(cos(phi)   * (*/ +(yMapColIdx / double(yMapWidth  - 1)) * double((2.0f - NormVecToCoordOfs) - 1.0f + NormVecToCoordOfs); //));
-      const GLfloat usrMapZ = /* GLfloat(cos(theta) * (*/ +(yMapRowIdx / double(yMapHeight - 1)) * double((2.0f - NormVecToCoordOfs) - 1.0f + NormVecToCoordOfs); //));
-#else
-      const GLfloat usrMapX = +(yMapColIdx / GLfloat(yMapWidth  - 1)) * (2.0f - NormVecToCoordOfs) - 1.f + NormVecToCoordOfs;
-      const GLfloat usrMapZ = +(yMapRowIdx / GLfloat(yMapHeight - 1)) * (2.0f - NormVecToCoordOfs) - 1.f + NormVecToCoordOfs;
-#endif
+      const GLfloat usrMapX = GLfloat(cos(phi)   * double(+(yMapColIdx / GLfloat(yMapWidth  - 1)) * (2.0f - NormVecToCoordOfs) - 1.0f + NormVecToCoordOfs));
+      const GLfloat usrMapZ = GLfloat(cos(theta) * double(+(yMapRowIdx / GLfloat(yMapHeight - 1)) * (2.0f - NormVecToCoordOfs) - 1.0f + NormVecToCoordOfs));
       const glm::vec3 thsVertex(usrMapX, usrMapY, usrMapZ);
 
       yMap.push_back(thsVertex);
