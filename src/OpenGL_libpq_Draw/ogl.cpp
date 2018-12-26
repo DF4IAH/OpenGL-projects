@@ -187,7 +187,7 @@ ogl::ogl()
   /* Initial map positioning */
   const double  latMid   =   49.5;
   const double  lonMid   =    8.5;
-  const double  latDelta =   10.0;
+  const double  latDelta =   15.0;
   const double  lonDelta = latDelta * cos(latMid * M_PI / 180.0);
   const double  altScale =  250.0;
   const GLfloat uvScaleY = GLfloat(latDelta / 30.0);
