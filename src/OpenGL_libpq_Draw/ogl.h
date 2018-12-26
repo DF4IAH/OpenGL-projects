@@ -24,10 +24,10 @@ public:
 private:
   void pq_open(void);
   void pq_close(void);
-  void pq_getAltData(double latMid, double lonMid, double latDelta);
-  void pq_transferDataDB2GL(GLfloat magAlt, GLfloat uvScaleX, GLfloat uvScaleY, GLfloat uvOfsX, GLfloat uvOfsY);
+  void pq_getAltData(double latMid, double lonMid, double latDelta, double lonDelta);
+  void pq_transferDataDB2GL(double latDelta, double lonDelta, double altScale, GLfloat uvScaleY, GLfloat uvScaleX, GLfloat uvOfsY, GLfloat uvOfsX);
 
-  void setupAltMesh(GLfloat scaleAlt, const glm::mat3 matUv, GLfloat latDelta, GLfloat lonDelta);
+  void setupAltMesh(double latDelta, double lonDelta, double altScale, const glm::mat3 matUv);
   void doNormMean(void);
   void doIndex(void);
   void loadIntoVBO(void);
@@ -42,12 +42,6 @@ private:
   /* postgreSQL DBMS */
   pq*                           db              = nullptr;
 
-  double                        db_latMid       = 0.0;  // Degrees  +: north  -: south
-  double                        db_lonMid       = 0.0;  // Degrees  +: east   -: west
-  double                        db_latDelta     = 0.0;  // Degrees
-  GLfloat                       db_MagAlt       = 1.0f;
-
-  double                        db_lonDelta     = 0.0;
   double                        db_lonW         = 0.0;
   double                        db_lonE         = 0.0;
   double                        db_latN         = 0.0;
@@ -72,6 +66,8 @@ private:
   GLint                         ViewMatrixID    = 0;
   GLint                         ModelMatrixID   = 0;
   GLint                         LightID         = 0;
+  GLint                         LightColorID    = 0;
+  GLint                         LightPowerID    = 0;
 
   GLuint                        Texture         = 0;
   GLint                         TextureID       = 0;
@@ -90,12 +86,6 @@ private:
   std::vector<glm::vec3>        indexed_vertices;
   std::vector<glm::vec2>        indexed_uvs;
   std::vector<glm::vec3>        indexed_normals;
-
-  /* Database altitude adaption */
-  GLfloat                       db_UvScaleX     = 0.0f;
-  GLfloat                       db_UvScaleY     = 0.0f;
-  GLfloat                       db_UvOfsX       = 0.0f;
-  GLfloat                       db_UvOfsY       = 0.0f;
 
   /* For speed computation */
   double                        lastTime        = 0.0;
